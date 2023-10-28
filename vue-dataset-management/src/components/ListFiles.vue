@@ -31,6 +31,18 @@
         </div>
       </div>
       <v-img ref="selectedImageRef" class="image-container" :src="imageSrc">
+        <template v-slot:placeholder>
+          <v-row
+            class="fill-height ma-0"
+            align="center"
+            justify="center"
+          >
+            <v-progress-circular
+              indeterminate
+              color="grey-lighten-5"
+            ></v-progress-circular>
+          </v-row>
+        </template>
         <div class="image-buttons">
           <v-btn class="ok-button" color="green" icon @click="saveFile(selectedImageName)"><v-icon>mdi-check</v-icon></v-btn>
           <v-btn class="delete-button" color="red" icon @click="deleteFile(selectedImageName)"><v-icon>mdi-delete</v-icon></v-btn>
@@ -110,28 +122,55 @@ const debounce = (func, delay) => {
 
 const imageSrc = ref('')
 
+const CACHE_SIZE = 20;
+const imageCache = [];
+
+
 const getImage = (imagePath, selectedIndexValue) => {
   selectedImageName.value = imagePath;
   selectedIndex.value = selectedIndexValue;
   selectedImageIndex.value = files.value.indexOf(imagePath);
   const fileName = encodeURIComponent(imageDir.value + '/' + imagePath);
   console.log('get image', fileName);
-  imageSrc.value = `http://127.0.0.1:5000/file/${fileName}`
-  // selectedImageRef.value.loading = true;
-  // axios.get(`http://127.0.0.1:5000/file/${fileName}`, { responseType: 'blob' })
-  //   .then(response => {
-  //     const reader = new FileReader();
-  //     reader.readAsDataURL(response.data);
-  //     reader.onload = () => {
-  //       const imageData = reader.result;
-  //       selectedImage.value = imageData;
-  //     };
-  //   })
-  //   .catch(error => {
-  //     console.log(error);
-  //   }).finally(() => {
-  //     selectedImageRef.value.loading = false;
-  //   })
+  const cachedImageData = getCachedImageData(imagePath);
+  if (cachedImageData) {
+    imageSrc.value = cachedImageData;
+  } else {
+    const prevFiles = files.value.slice(Math.max(0, selectedImageIndex.value - 10), selectedImageIndex.value);
+    const nextFiles = files.value.slice(selectedImageIndex.value + 1, selectedImageIndex.value + 11);
+    const uncachedFiles = prevFiles.concat(nextFiles).filter(file => !imageCache.includes(file));
+    axios.get(`http://127.0.0.1:5000/file/${fileName}`, { responseType: 'blob' })
+    .then(response => {
+      const reader = new FileReader();
+      reader.readAsDataURL(response.data);
+      reader.onload = () => {
+        const imageData = reader.result;
+        imageSrc.value = imageData;
+        cacheImageData(imagePath, imageData);
+      };
+    })
+    .catch(error => {
+      console.log(error);
+    });
+    axios.all(uncachedFiles.map(file => axios.get(`http://127.0.0.1:5000/file/${encodeURIComponent(imageDir.value + '/' + file)}`, { responseType: 'blob' })))
+      .then(axios.spread((...responses) => {
+        responses.forEach((response, index) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(response.data);
+          reader.onload = () => {
+            const imageData = reader.result;
+            imageCache.push(uncachedFiles[index]);
+            if (imageCache.length > CACHE_SIZE) {
+              imageCache.shift();
+            }
+            cacheImageData(uncachedFiles[index], imageData);
+          };
+        });
+      }))
+      .catch(error => {
+        console.log(error);
+      });
+  }
   const textFileName = imagePath.replace(/\.[^/.]+$/, '.txt');
   const textFile = encodeURIComponent(imageDir.value + '/' + textFileName);
   axios.get(`http://127.0.0.1:5000/file/${textFile}`)
@@ -144,6 +183,27 @@ const getImage = (imagePath, selectedIndexValue) => {
   // Auto-scroll to the selected file
   goTo(`#file-${selectedIndex.value}`)
 }
+
+
+const getCachedImageData = (imagePath) => {
+  const index = imageCache.findIndex((item) => item.path === imagePath);
+  if (index !== -1) {
+    const imageData = imageCache[index].data;
+    // Move the cached image to the end of the array
+    imageCache.splice(index, 1);
+    imageCache.push({ path: imagePath, data: imageData });
+    return imageData;
+  }
+  return null;
+};
+
+const cacheImageData = (imagePath, imageData) => {
+  if (imageCache.length >= cacheSize) {
+    // Remove the oldest cached image
+    imageCache.shift();
+  }
+  imageCache.push({ path: imagePath, data: imageData });
+};
 
 // const getImage = (imagePath,selectedIndexValue) => {
 //   const formData = new FormData();
@@ -243,14 +303,56 @@ const goTo = (selector) => {
 }
 
 const prevImage = () => {
-  if (selectedImageIndex.value > 0) {
-    getImage(files.value[selectedImageIndex.value - 1], selectedImageIndex.value - 1)
+  // if (selectedImageIndex.value > 0) {
+  //   getImage(files.value[selectedImageIndex.value - 1], selectedImageIndex.value - 1)
+  // }
+  const cachedImageData = getCachedImageData(files.value[selectedImageIndex.value - 1]);
+  if (selectedImageIndex.value > 0 && cachedImageData) {
+    selectedImageName.value = files.value[selectedImageIndex.value - 1];
+    selectedIndex.value = selectedImageIndex.value - 1;
+    selectedImageIndex.value--;
+    imageSrc.value = cachedImageData;
+    const textFileName = selectedImageName.value.replace(/\.[^/.]+$/, '.txt');
+    const textFile = encodeURIComponent(imageDir.value + '/' + textFileName);
+    axios
+      .get(`http://127.0.0.1:5000/file/${textFile}`)
+      .then((response) => {
+        captions.value = response.data;
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+    // Auto-scroll to the selected file
+    goTo(`#file-${selectedIndex.value}`);
+  } else if (selectedImageIndex.value > 0) {
+    getImage(files.value[selectedImageIndex.value - 1], selectedImageIndex.value - 1);
   }
 }
 
 const nextImage = () => {
-  if (selectedImageIndex.value < files.value.length - 1) {
-    getImage(files.value[selectedImageIndex.value + 1], selectedImageIndex.value + 1)
+  // if (selectedImageIndex.value < files.value.length - 1) {
+  //   getImage(files.value[selectedImageIndex.value + 1], selectedImageIndex.value + 1)
+  // }
+  const cachedImageData = getCachedImageData(files.value[selectedImageIndex.value + 1]);
+  if (selectedImageIndex.value < files.value.length - 1 && cachedImageData) {
+    selectedImageName.value = files.value[selectedImageIndex.value + 1];
+    selectedIndex.value = selectedImageIndex.value + 1;
+    selectedImageIndex.value++;
+    imageSrc.value = cachedImageData;
+    const textFileName = selectedImageName.value.replace(/\.[^/.]+$/, '.txt');
+    const textFile = encodeURIComponent(imageDir.value + '/' + textFileName);
+    axios
+      .get(`http://127.0.0.1:5000/file/${textFile}`)
+      .then((response) => {
+        captions.value = response.data;
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+    // Auto-scroll to the selected file
+    goTo(`#file-${selectedIndex.value}`);
+  } else if (selectedImageIndex.value < files.value.length - 1) {
+    getImage(files.value[selectedImageIndex.value + 1], selectedImageIndex.value + 1);
   }
 }
 

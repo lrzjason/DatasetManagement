@@ -89,8 +89,25 @@ def get_file(file_name):
     # Check if the file has .png or .jpg extension
     if file_name.endswith('.png'):
         mimetype = 'image/png'
+        is_image = True
     elif file_name.endswith('.jpg'):
         mimetype = 'image/jpeg'
+        is_image = True
+    
+    if is_image:
+        # replace file dir to thumbnail dir
+        # get file dir
+        file_dir = os.path.dirname(file_name)
+        # get file name
+        img_file_name = os.path.basename(file_name)
+        # get parent dir
+        parent_dir = os.path.dirname(file_dir)
+        # get thumbnail dir
+        thumbnail = os.path.join(parent_dir, "thumbnails", img_file_name)
+        if os.path.exists(thumbnail):
+            print("thumbnail exists", thumbnail)
+            file_name = thumbnail
+
     # Return the image file as a response
     return send_file(file_name, mimetype=mimetype)
 
