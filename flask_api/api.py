@@ -3,6 +3,8 @@ from flask import Flask, request, send_file
 from flask_cors import CORS
 import json
 from PIL import Image
+from io import BytesIO
+import os
 
 # Create a flask app
 app = Flask(__name__)
@@ -52,10 +54,13 @@ def save_file():
     if not file_name.endswith('.txt'):
         return 'File name must have .txt extension', 400
     # Import os module to write to the file
-    import os
-    # Open the file in write mode and overwrite its content
-    with open(file_name, 'w', encoding='utf-8') as f:
-        f.write(content)
+    if os.path.exists(file_name):
+        with open(file_name, 'r', encoding='utf-8') as f:
+            existing_content = f.read()
+        if not (len(existing_content) == len(content)):
+            # Open the file in write mode and overwrite its content
+            with open(file_name, 'w', encoding='utf-8') as f:
+                f.write(content)
     # Append the file name to the JSON file
     json_file = 'saved_files.json'
     if os.path.exists(json_file):
@@ -71,25 +76,21 @@ def save_file():
     return {'message': 'File saved successfully','saved_files': data}, 200
 
 # Define a route for the image function
-@app.route('/file', methods=['POST'])
-def get_file():
-    # Get the file name parameter from the request
-    file_name = request.form.get('file_name')
-    print('-----file_name',file_name)
-    # Check if the file name is valid
-    if not file_name:
-        return 'Invalid file name', 400
-    mimetype = 'text/plain'
-    # Check if the file has .png or .jpg extension
-    if file_name.endswith('.png'):
-        mimetype = 'image/png'
-    elif file_name.endswith('.jpg'):
-        mimetype = 'image/jpeg'
+@app.route('/file/<path:file_name>', methods=['GET'])
+def get_file(file_name):
+    print('-----file_name', file_name)
     # Import os module to check if the file exists
     import os
     # Check if the file exists in the current directory
     if not os.path.exists(file_name):
         return 'File does not exist', 404
+    mimetype = 'text/plain'
+    is_image = False
+    # Check if the file has .png or .jpg extension
+    if file_name.endswith('.png'):
+        mimetype = 'image/png'
+    elif file_name.endswith('.jpg'):
+        mimetype = 'image/jpeg'
     # Return the image file as a response
     return send_file(file_name, mimetype=mimetype)
 
