@@ -1,6 +1,11 @@
 <template>
   <v-row>
-    
+    <v-col>
+      <v-text-field v-model="imageDir" label="Target Dir">
+      </v-text-field>
+    </v-col>
+  </v-row>
+  <v-row>
     <v-col cols="4">
       <h1>List of Files</h1>
       <v-card class="scrollable-list">
