@@ -1,10 +1,10 @@
 <script setup>
 // import TheWelcome from '../components/TheWelcome.vue'
-import ListFiles from '../components/ListFiles.vue'
+import ListPairs from '../components/ListPairs.vue'
 </script>
 
 <template>
-  <ListFiles />
+  <ListPairs />
 </template>
 
 <!-- <template>

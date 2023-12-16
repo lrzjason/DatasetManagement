@@ -1,12 +1,12 @@
 <template>
-  <v-row>
+  <!-- <v-row>
     <v-col>
       <v-text-field v-model="imageDir" label="Target Dir">
       </v-text-field>
     </v-col>
-  </v-row>
+  </v-row> -->
   <v-row>
-    <v-col cols="4">
+    <v-col cols="3">
       <h1>List of Files</h1>
       <v-card class="scrollable-list">
         <v-list>
@@ -27,32 +27,36 @@
       </v-card>
       <v-textarea v-model="captions" label="Enter text here" rows="10"></v-textarea>
     </v-col>
-    <v-col cols="8">
+    <v-col cols="9">
       <div>Selected Image: {{ selectedImageName }} {{ savedFiles.length }} / {{ files.length }}</div>
-      <div class="controls-wrapper">
+      <!-- <div class="controls-wrapper">
         <div class="image-controls">
           <v-btn icon @click="prevImage"><v-icon>mdi-chevron-left</v-icon></v-btn>
           <v-btn icon @click="nextImage"><v-icon>mdi-chevron-right</v-icon></v-btn>
         </div>
-      </div>
-      <v-img ref="selectedImageRef" class="image-container" :src="imageSrc">
-        <template v-slot:placeholder>
-          <v-row
-            class="fill-height ma-0"
-            align="center"
-            justify="center"
-          >
-            <v-progress-circular
-              indeterminate
-              color="grey-lighten-5"
-            ></v-progress-circular>
-          </v-row>
-        </template>
+      </div> -->
+      <div  class="image-container">
+        <v-img ref="selectedImageRef" :src="imageSrc">
+          <template v-slot:placeholder>
+            <v-row
+              class="fill-height ma-0"
+              align="center"
+              justify="center"
+            >
+              <v-progress-circular
+                indeterminate
+                color="grey-lighten-5"
+              ></v-progress-circular>
+            </v-row>
+          </template>
+        </v-img>
         <div class="image-buttons">
-          <v-btn class="ok-button" color="green" icon @click="saveFile(selectedImageName)"><v-icon>mdi-check</v-icon></v-btn>
-          <v-btn class="delete-button" color="red" icon @click="deleteFile(selectedImageName)"><v-icon>mdi-delete</v-icon></v-btn>
+          <v-btn class="floating-button" color="green" icon @click="saveFile(selectedImageName)"><v-icon>mdi-check</v-icon></v-btn>
+          <v-btn class="floating-button" color="red" icon @click="deleteFile(selectedImageName)"><v-icon>mdi-delete</v-icon></v-btn>
+          <v-btn class="floating-button" icon @click="prevImage"><v-icon>mdi-chevron-left</v-icon></v-btn>
+          <v-btn class="end-button" icon @click="nextImage"><v-icon>mdi-chevron-right</v-icon></v-btn>
         </div>
-      </v-img>
+      </div>
     </v-col>
   </v-row>
 
@@ -69,7 +73,7 @@
   position: relative;
 }
 .scrollable-list {
-  max-height: calc(100vh - 370px);
+  max-height: calc(100vh - 450px);
   overflow-y: auto;
 }
 .image-controls {
@@ -87,9 +91,12 @@
   align-items: flex-end;
   padding: 10px;
 }
-.ok-button {
+.floating-button {
   /* margin-bottom: 30px; */
   margin-right: 30px;
+}
+.end-button {
+  margin-right: 50px;
 }
 .selected-file {
   background-color: #ddd;
@@ -98,7 +105,7 @@
 
 <script setup>
 import axios from 'axios';
-import { onMounted, ref, nextTick, onUnmounted } from 'vue';
+import { onMounted, ref, nextTick, onUnmounted, watch } from 'vue';
 
 const captions = ref('')
 
@@ -109,6 +116,11 @@ const selectedImageIndex = ref(0)
 const files= ref([])
 const savedFiles = ref([])
 const imageDir = ref('F:\\ImageSet\\dump\\mobcup_output')
+
+// watch imageDir change, list files
+watch(imageDir, (newValue, oldValue) => {
+  listFiles();
+})
 
 const selectedImageName = ref('')
 const selectedIndex = ref(1)
@@ -232,42 +244,6 @@ const getCachedImageData = (imagePath) => {
   return null;
 };
 
-// const getImage = (imagePath,selectedIndexValue) => {
-//   const formData = new FormData();
-//   selectedImageName.value = imagePath;
-//   selectedIndex.value = selectedIndexValue;
-//   selectedImageIndex.value = files.value.indexOf(imagePath)
-//   const fileName = imageDir.value + '\\' + imagePath
-//   console.log('get image', fileName);
-//   selectedImageRef.value.loading = true;
-//   formData.append('file_name', fileName);
-//   axios.post('http://127.0.0.1:5000/file', formData, { responseType: 'blob' })
-//     .then(response => {
-//       const reader = new FileReader();
-//       reader.readAsDataURL(response.data);
-//       reader.onload = () => {
-//         const imageData = reader.result;
-//         selectedImage.value = imageData;
-//       };
-//     })
-//     .catch(error => {
-//       console.log(error);
-//     }).finally(() => {
-//       selectedImageRef.value.loading = false;
-//     })
-//   const formDataForText = new FormData();
-//   const textFileName = imagePath.replace(/\.[^/.]+$/, '.txt');
-//   formDataForText.append('file_name', imageDir.value + '\\' + textFileName);
-//   axios.post('http://127.0.0.1:5000/file', formDataForText)
-//     .then(response => {
-//       captions.value = response.data
-//     })
-//     .catch(error => {
-//       console.log(error);
-//     })
-//   // Auto-scroll to the selected file
-//   goTo(`#file-${selectedIndex.value}`)
-// }
 
 const saveFile = debounce((fileName) => {
   // Auto-scroll to the selected file
@@ -334,54 +310,12 @@ const prevImage = () => {
   if (selectedImageIndex.value > 0) {
     getImage(files.value[selectedImageIndex.value - 1], selectedImageIndex.value - 1)
   }
-  // const cachedImageData = getCachedImageData(files.value[selectedImageIndex.value - 1]);
-  // if (selectedImageIndex.value > 0 && cachedImageData) {
-  //   selectedImageName.value = files.value[selectedImageIndex.value - 1];
-  //   selectedIndex.value = selectedImageIndex.value - 1;
-  //   selectedImageIndex.value--;
-  //   imageSrc.value = cachedImageData;
-  //   const textFileName = selectedImageName.value.replace(/\.[^/.]+$/, '.txt');
-  //   const textFile = encodeURIComponent(imageDir.value + '/' + textFileName);
-  //   axios
-  //     .get(`http://127.0.0.1:5000/file/${textFile}`)
-  //     .then((response) => {
-  //       captions.value = response.data;
-  //     })
-  //     .catch((error) => {
-  //       console.log(error);
-  //     });
-  //   // Auto-scroll to the selected file
-  //   goTo(`#file-${selectedIndex.value}`);
-  // } else if (selectedImageIndex.value > 0) {
-  //   getImage(files.value[selectedImageIndex.value - 1], selectedImageIndex.value - 1);
-  // }
 }
 
 const nextImage = () => {
   if (selectedImageIndex.value < files.value.length - 1) {
     getImage(files.value[selectedImageIndex.value + 1], selectedImageIndex.value + 1)
   }
-  // const cachedImageData = getCachedImageData(files.value[selectedImageIndex.value + 1]);
-  // if (selectedImageIndex.value < files.value.length - 1 && cachedImageData) {
-  //   selectedImageName.value = files.value[selectedImageIndex.value + 1];
-  //   selectedIndex.value = selectedImageIndex.value + 1;
-  //   selectedImageIndex.value++;
-  //   imageSrc.value = cachedImageData;
-  //   const textFileName = selectedImageName.value.replace(/\.[^/.]+$/, '.txt');
-  //   const textFile = encodeURIComponent(imageDir.value + '/' + textFileName);
-  //   axios
-  //     .get(`http://127.0.0.1:5000/file/${textFile}`)
-  //     .then((response) => {
-  //       captions.value = response.data;
-  //     })
-  //     .catch((error) => {
-  //       console.log(error);
-  //     });
-  //   // Auto-scroll to the selected file
-  //   goTo(`#file-${selectedIndex.value}`);
-  // } else if (selectedImageIndex.value < files.value.length - 1) {
-  //   getImage(files.value[selectedImageIndex.value + 1], selectedImageIndex.value + 1);
-  // }
 }
 
 const isSaved = (fileName) => {

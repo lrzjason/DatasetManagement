@@ -5,10 +5,286 @@ import json
 from PIL import Image
 from io import BytesIO
 import os
+import shutil
 
 # Create a flask app
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
+
+
+# Define a route for the list function
+@app.route('/export_pairs', methods=['POST'])
+def export_pairs():
+    image_ext = ".png"
+    # Get the path parameter from the request
+    caption_folder = request.form.get('caption_folder')
+    # Get the path parameter from the request
+    image_folder = request.form.get('image_folder')
+    # Check if the path is valid
+    if not caption_folder:
+        return 'Invalid path', 400
+    
+    image_subfolders = os.listdir(image_folder)
+    
+    caption_export_folder = f"{caption_folder}_export"
+    # create export folder if it doesn't exist
+    if not os.path.exists(caption_export_folder):
+        os.makedirs(caption_export_folder)
+    image_export_folder = f"{image_folder}_export"
+    # create export folder if it doesn't exist
+    if not os.path.exists(image_export_folder):
+        os.makedirs(image_export_folder)
+
+    
+    # copy images to export folder
+    for image_subfolder in image_subfolders:
+        image_export_subfolder = os.path.join(image_export_folder,image_subfolder)
+        if not os.path.exists(image_export_subfolder):
+            os.makedirs(image_export_subfolder)
+
+    # try:
+    # Return the list as a JSON response
+    # Read the saved_files.json file and append the saved file names to the list
+    json_file = 'saved_pairs.json'
+    saved_pairs = []
+    if os.path.exists(json_file):
+        with open(json_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        for name in data:
+            text_file_name = f"{name}.txt"
+            # copy captions to export folder
+            text_file_path = os.path.join(caption_folder, text_file_name)
+            text_file_export_path = os.path.join(caption_export_folder, text_file_name)
+            if os.path.exists(text_file_path) and not os.path.exists(text_file_export_path):
+                shutil.copy(text_file_path, text_file_export_path)
+            
+            # copy images to export folder
+            for image_subfolder in image_subfolders:
+                image_file_name = f"{name}{image_ext}"
+                image_file_path = os.path.join(image_folder,image_subfolder,image_file_name)
+                image_file_export_path = os.path.join(image_export_folder,image_subfolder,image_file_name)
+                if os.path.exists(image_file_path) and not os.path.exists(image_file_export_path):
+                    shutil.copy(image_file_path, image_file_export_path)
+    # except Exception as e:
+    #     return {'message': str(e)}, 500
+    # Return the list as a JSON response
+    return {'message': 'Pair exported successfully'}, 200
+
+# Define a route for the list function
+@app.route('/list_pairs', methods=['POST'])
+def list_pairs():
+    image_ext = ".png"
+    # Get the path parameter from the request
+    caption_folder = request.form.get('caption_folder')
+    # Get the path parameter from the request
+    image_folder = request.form.get('image_folder')
+    # Check if the path is valid
+    if not caption_folder:
+        return 'Invalid path', 400
+    
+    thumbnail_folder = f"{image_folder}_thumbnails"
+
+    image_subfolders = os.listdir(image_folder)
+
+    pairs = []
+    for caption_filename in os.listdir(caption_folder):
+        caption_path = os.path.join(caption_folder, caption_filename)
+        caption_name,ext = os.path.splitext(caption_filename)
+        with open(caption_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        images = {}
+        thumbnails = {}
+        image_exist = True
+        for image_subfolder in image_subfolders:
+            images[image_subfolder] = os.path.join(image_folder,image_subfolder,f"{caption_name}{image_ext}")
+            if not os.path.exists(images[image_subfolder]):
+                image_exist = False
+                break
+            thumbnail_file = os.path.join(thumbnail_folder,image_subfolder,f"{caption_name}{image_ext}")
+            # print(f'thumbnail_file: {thumbnail_file}')
+            if os.path.exists(thumbnail_file):
+                thumbnails[image_subfolder] = thumbnail_file
+        if image_exist:
+            # print(f'thumbnails: {thumbnails}')
+            pairs.append({
+                "name": caption_name,
+                "caption": content,
+                "images":images,
+                "thumbnails":thumbnails
+            })
+
+    # Return the list as a JSON response
+    # Read the saved_files.json file and append the saved file names to the list
+    json_file = 'saved_pairs.json'
+    saved_pairs = []
+    if os.path.exists(json_file):
+        with open(json_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        for file in data:
+            saved_pairs.append(file)
+    # Return the list as a JSON response
+    return {'pairs': pairs, 'saved_pairs': saved_pairs}, 200
+
+
+# Define a route for the save function
+@app.route('/save_pair', methods=['POST'])
+def save_pair():
+    # Get the file name and content parameters from the request
+    file_name = request.form.get('file_name')
+    content = request.form.get('content')
+    name = request.form.get('name')
+    # Check if the file name and content are valid
+    if not file_name or not content:
+        return 'Invalid file name or content', 400
+    # Check if the file name has .txt extension
+    if not file_name.endswith('.txt'):
+        return 'File name must have .txt extension', 400
+    # Import os module to write to the file
+    if os.path.exists(file_name):
+        with open(file_name, 'r', encoding='utf-8') as f:
+            existing_content = f.read()
+        if not (len(existing_content) == len(content)):
+            # Open the file in write mode and overwrite its content
+            with open(file_name, 'w', encoding='utf-8') as f:
+                f.write(content)
+    # Append the file name to the JSON file
+    json_file = 'saved_pairs.json'
+    if os.path.exists(json_file):
+        with open(json_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+    else:
+        data = []
+    if name not in data:
+        data.append(name)
+        with open(json_file, 'w', encoding='utf-8') as f:
+            json.dump(data, f)
+    # Return a success message as a JSON response
+    return {'message': 'Pair saved successfully','saved_pairs': data}, 200
+
+
+
+# Define a route for the switch function
+@app.route('/switch_pair', methods=['POST'])
+def switch_pair():
+    # Get the file name parameter from the request
+    switch_from = request.form.get('switch_from')
+    # Get the file name parameter from the request
+    switch_to = request.form.get('switch_to')
+
+    thumbnail_from = switch_from.replace("images","images_thumbnails")
+    thumbnail_to = switch_to.replace("images","images_thumbnails")
+    if not os.path.exists(switch_from) or not os.path.exists(switch_from):
+        return 'Invalid path', 400
+
+    # create temp folder for switch
+    temp_folder = "temp"
+    if not os.path.exists(temp_folder):
+        os.mkdir(temp_folder)
+    
+    temp_thumbnail_folder = "temp_thumbnail"
+    if not os.path.exists(temp_thumbnail_folder):
+        os.mkdir(temp_thumbnail_folder)
+
+    file_name = os.path.basename (switch_from)
+    temp_file = os.path.join(temp_folder,file_name)
+    temp_thumbnail = os.path.join(temp_thumbnail_folder,file_name)
+    # move switch_from to temp folder
+    if os.path.exists(switch_from):
+        shutil.move(switch_from,temp_file)
+        if os.path.exists(thumbnail_from):
+            shutil.move(thumbnail_from,temp_thumbnail)
+        
+    
+    # move switch_to to switch_from
+    if os.path.exists(switch_to):
+        shutil.move(switch_to,switch_from)
+        if os.path.exists(thumbnail_to):
+            shutil.move(thumbnail_to,thumbnail_from)
+
+    # move temp_file to switch_to
+    if os.path.exists(temp_file):
+        shutil.move(temp_file,switch_to)
+        if os.path.exists(temp_thumbnail):
+            shutil.move(temp_thumbnail,thumbnail_to)
+
+    # Return a success message as a JSON response
+    return {'message': 'File switched successfully'}, 200
+    
+
+# Define a route for the delete function
+@app.route('/delete_pair', methods=['POST'])
+def delete_pair():
+    # Get the file name parameter from the request
+    name = request.form.get('name')
+    text_file_name = f"{name}.txt"
+    # Get the path parameter from the request
+    caption_folder = request.form.get('caption_folder')
+    caption_deleted_folder = f"{caption_folder}_deleted"
+    # Get the path parameter from the request
+    image_folder = request.form.get('image_folder')
+    image_deleted_folder = f"{image_folder}_deleted"
+    # Check if the file name is valid
+    if not name:
+        return 'Invalid name', 400
+    # Import os module to check if the file exists and delete it
+    import os
+    import shutil
+    # Check if the file exists in the current directory
+    if not os.path.exists(os.path.join(caption_folder,f"{name}.txt")):
+        return 'File does not exist', 404
+    
+    # create deleted dir if not exist
+    if not os.path.exists(caption_deleted_folder):
+        os.mkdir(caption_deleted_folder)
+    # create deleted dir if not exist
+    if not os.path.exists(image_deleted_folder):
+        os.mkdir(image_deleted_folder)
+    # copy file to deleted dir
+
+    # check txt file exist in captions folder
+    if os.path.exists(os.path.join(caption_folder,text_file_name)):
+        # copy to deleted folder
+        shutil.copy(os.path.join(caption_folder,text_file_name),os.path.join(caption_deleted_folder,text_file_name))
+        # remove original files
+        os.remove(os.path.join(caption_folder,text_file_name))
+    
+    # check image file exist in images folder
+    for image_subfolder in os.listdir(image_folder):
+        image_file_name = f"{name}.png"
+        original_folder = os.path.join(image_folder,image_subfolder)
+        deleted_folder = os.path.join(image_deleted_folder,image_subfolder)
+        if not os.path.exists(deleted_folder):
+            os.mkdir(deleted_folder)
+        if os.path.exists(os.path.join(original_folder,image_file_name)):
+            # copy to deleted folder
+            shutil.copy(os.path.join(original_folder,image_file_name),os.path.join(deleted_folder,image_file_name))
+            # remove original files
+            os.remove(os.path.join(original_folder,image_file_name))
+
+    # Remove the file name from the saved_files.json file if it exists
+    json_file = 'saved_pairs.json'
+    if os.path.exists(json_file):
+        with open(json_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        if name in data:
+            data.remove(name)
+            with open(json_file, 'w', encoding='utf-8') as f:
+                json.dump(data, f)
+
+    # write file into deleted_pairs.
+    json_file = 'deleted_pairs.json'
+    if os.path.exists(json_file):
+        with open(json_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+    else:
+        data = []
+    if name not in data:
+        data.append(name)
+        with open(json_file, 'w', encoding='utf-8') as f:
+            json.dump(data, f)
+    # Return a success message as a JSON response
+    return {'message': 'File deleted successfully'}, 200
+
 
 
 # Define a route for the list function
@@ -34,7 +310,7 @@ def list_files():
     json_file = 'saved_files.json'
     saved_files = []
     if os.path.exists(json_file):
-        with open(json_file, 'r') as f:
+        with open(json_file, 'r', encoding='utf-8') as f:
             data = json.load(f)
         for file in data:
             saved_files.append(file)
@@ -64,13 +340,13 @@ def save_file():
     # Append the file name to the JSON file
     json_file = 'saved_files.json'
     if os.path.exists(json_file):
-        with open(json_file, 'r') as f:
+        with open(json_file, 'r', encoding='utf-8') as f:
             data = json.load(f)
     else:
         data = []
     if file_name not in data:
         data.append(file_name)
-        with open(json_file, 'w') as f:
+        with open(json_file, 'w', encoding='utf-8') as f:
             json.dump(data, f)
     # Return a success message as a JSON response
     return {'message': 'File saved successfully','saved_files': data}, 200
@@ -133,11 +409,11 @@ def delete_file():
     # Remove the file name from the saved_files.json file if it exists
     json_file = 'saved_files.json'
     if os.path.exists(json_file):
-        with open(json_file, 'r') as f:
+        with open(json_file, 'r', encoding='utf-8') as f:
             data = json.load(f)
         if file_name in data:
             data.remove(file_name)
-            with open(json_file, 'w') as f:
+            with open(json_file, 'w', encoding='utf-8') as f:
                 json.dump(data, f)
     # Return a success message as a JSON response
     return {'message': 'File deleted successfully'}, 200

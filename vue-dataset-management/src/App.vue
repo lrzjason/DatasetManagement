@@ -1,6 +1,14 @@
 <script setup>
-import { RouterLink, RouterView } from 'vue-router'
+import { RouterLink, RouterView, useRouter, useRoute } from 'vue-router'
 import HelloWorld from './components/HelloWorld.vue'
+import { computed } from 'vue'
+import DefaultLayout from '@/layouts/DefaultLayout.vue'
+
+let route = useRoute()
+
+let layout = computed(()=>{
+    return route.meta.layout || "DefaultLayout"
+})
 </script>
 
 <template>
@@ -16,10 +24,15 @@ import HelloWorld from './components/HelloWorld.vue'
       </nav>
     </div>
   </header> -->
-
+<!-- 
     <v-container class="max-viewpoint">
       <RouterView />
-    </v-container>
+    </v-container> -->
+    <v-app>
+      <component :is="layout" class="max-viewpoint">
+        <router-view />
+      </component>
+    </v-app>
 </template>
 
 <style scoped>

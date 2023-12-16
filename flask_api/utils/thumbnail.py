@@ -1,7 +1,7 @@
 import os
 from PIL import Image
 
-input_dir = 'F:\\ImageSet\\dump\\mobcup_output'
+input_dir = 'F:\\ImageSet\\Pickscore_train_5k'
 output_dir = os.path.join(input_dir, "thumbnails")
 print("output_dir",output_dir)
 

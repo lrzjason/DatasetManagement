@@ -1,34 +1,5 @@
-"""Calculates the CLIP Scores
 
-The CLIP model is a contrasitively learned language-image model. There is
-an image encoder and a text encoder. It is believed that the CLIP model could 
-measure the similarity of cross modalities. Please find more information from 
-https://github.com/openai/CLIP.
-
-The CLIP Score measures the Cosine Similarity between two embedded features.
-This repository utilizes the pretrained CLIP Model to calculate 
-the mean average of cosine similarities. 
-
-See --help to see further details.
-
-Code apapted from https://github.com/mseitzer/pytorch-fid and https://github.com/openai/CLIP.
-
-Copyright 2023 The Hong Kong Polytechnic University
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-   http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
 import os
-import os.path as osp
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 
 import clip
@@ -36,123 +7,8 @@ import torch
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 
-try:
-    from tqdm import tqdm
-except ImportError:
-    # If tqdm is not available, provide a mock version of it
-    def tqdm(x):
-        return x
-
-
-parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
-parser.add_argument('--batch-size', type=int, default=50,
-                    help='Batch size to use')
-parser.add_argument('--clip-model', type=str, default='ViT-B/32',
-                    help='CLIP model to use')
-parser.add_argument('--num-workers', type=int,
-                    help=('Number of processes to use for data loading. '
-                          'Defaults to `min(8, num_cpus)`'))
-parser.add_argument('--device', type=str, default=None,
-                    help='Device to use. Like cuda, cuda:0 or cpu')
-parser.add_argument('--real_flag', type=str, default='img',
-                    help=('The modality of real path. '
-                          'Default to img'))
-parser.add_argument('--fake_flag', type=str, default='txt',
-                    help=('The modality of real path. '
-                          'Default to txt'))
-parser.add_argument('real_path', type=str, 
-                    help=('Paths to the generated images or '
-                          'to .npz statistic files'))
-parser.add_argument('fake_path', type=str,
-                    help=('Paths to the generated images or '
-                          'to .npz statistic files'))
-
-IMAGE_EXTENSIONS = {'bmp', 'jpg', 'jpeg', 'pgm', 'png', 'ppm',
-                    'tif', 'tiff', 'webp'}
-
-TEXT_EXTENSIONS = {'txt'}
-
-
-class DummyDataset(Dataset):
-    
-    FLAGS = ['img', 'txt']
-    def __init__(self, real_path, fake_path,
-                 real_flag: str = 'img',
-                 fake_flag: str = 'img',
-                 transform = None,
-                 tokenizer = None) -> None:
-        super().__init__()
-        assert real_flag in self.FLAGS and fake_flag in self.FLAGS, \
-            'CLIP Score only support modality of {}. However, get {} and {}'.format(
-                self.FLAGS, real_flag, fake_flag
-            )
-        self.real_folder = self._combine_without_prefix(real_path)
-        self.real_flag = real_flag
-        self.fake_foler = self._combine_without_prefix(fake_path)
-        self.fake_flag = fake_flag
-        self.transform = transform
-        self.tokenizer = tokenizer
-        # assert self._check()
-
-    def __len__(self):
-        return len(self.real_folder)
-
-    def __getitem__(self, index):
-        if index >= len(self):
-            raise IndexError
-        real_path = self.real_folder[index]
-        fake_path = self.fake_foler[index]
-        real_data = self._load_modality(real_path, self.real_flag)
-        fake_data = self._load_modality(fake_path, self.fake_flag)
-
-        sample = dict(real=real_data, fake=fake_data)
-        return sample
-    
-    def _load_modality(self, path, modality):
-        if modality == 'img':
-            data = self._load_img(path)
-        elif modality == 'txt':
-            data = self._load_txt(path)
-        else:
-            raise TypeError("Got unexpected modality: {}".format(modality))
-        return data
-
-    def _load_img(self, path):
-        img = Image.open(path)
-        if self.transform is not None:
-            img = self.transform(img)
-        return img
-    
-    def _load_txt(self, path):
-        data = []
-        with open(path, 'r') as fp:
-            # data = fp.read()
-            content = fp.read()
-            fp.close()
-        if self.tokenizer is not None:
-            chunk_size = 77
-            for i in range(0, len(content), chunk_size):
-              chunk = content[i:i+chunk_size]
-              prompt_tokens = self.tokenizer(chunk).squeeze()
-              data.append(prompt_tokens)
-        return data
-
-    def _check(self):
-        for idx in range(len(self)):
-            real_name = self.real_folder[idx].split('.')
-            fake_name = self.fake_folder[idx].split('.')
-            if fake_name != real_name:
-                return False
-        return True
-    
-    def _combine_without_prefix(self, folder_path, prefix='.'):
-        folder = []
-        for name in os.listdir(folder_path):
-            if name[0] == prefix:
-                continue
-            folder.append(osp.join(folder_path, name))
-        folder.sort()
-        return folder
+from transformers import CLIPProcessor, CLIPModel
+import json
 
 
 def load_img(path,transform):
@@ -170,12 +26,22 @@ def load_txt(path):
     chunk_size = 77
     for i in range(0, len(content), chunk_size):
       chunk = content[i:i+chunk_size]
-      prompt_tokens = clip.tokenize(chunk)
-      data.append(prompt_tokens)
+    #   prompt_tokens = clip.tokenize(chunk)
+      data.append(chunk)
     return data
 
 @torch.no_grad()
-def calculate_clip_score(input_dir, model, preprocess,device):
+def calculate_clip_score(input_dir, model, processor,device):
+    # get current dir and create temp dir
+    temp_dir = os.path.join(os.getcwd(), 'temp')
+    if not os.path.exists(temp_dir):
+        os.makedirs(temp_dir)
+    result_file = os.path.join(temp_dir, 'result.json')
+    if os.path.exists(result_file):
+        os.remove(result_file)
+        # create result file
+    score_results = []
+    
     score_acc = 0.
     sample_num = 0.
     logit_scale = model.logit_scale.exp()
@@ -184,25 +50,34 @@ def calculate_clip_score(input_dir, model, preprocess,device):
         if filename.endswith(".jpg") or filename.endswith(".jpeg") or filename.endswith(".png"):
             image_path = os.path.join(input_dir, filename)
             text_path = os.path.join(input_dir, filename.split('.')[0] + '.txt')
-            print("image_path",image_path)
-            print("text_path",text_path)
+            # print("image_path",image_path)
+            # print("text_path",text_path)
             if not os.path.exists(text_path):
                 print("skipping",text_path)
                 continue
             # apply transforms to image
             with open(image_path, 'rb') as f:
                 img = Image.open(f)
-                real_data = preprocess(img).unsqueeze(0).to(device)
-            fake_data = load_txt(text_path)
-            real_features = forward_modality(model, real_data, 'img')
-            fake_features = forward_modality(model, fake_data, 'txt')
-            # normalize features
-            real_features = real_features / real_features.norm(dim=1, keepdim=True).to(torch.float32)
-            fake_features = fake_features / fake_features.norm(dim=1, keepdim=True).to(torch.float32)
-            # calculate scores
-            score = logit_scale * (fake_features * real_features).sum()
-            score_acc += score
-            sample_num += 1
+                #     real_data = preprocess(img).unsqueeze(0).to(device)
+                fake_data = load_txt(text_path)
+
+                inputs = processor(text=fake_data, images=img, return_tensors="pt", padding=True)
+                outputs = model(**inputs)
+
+                score = outputs.logits_per_image.mean()
+                print({'name': filename, 'score': score.item()})
+                score_results.append({'name': filename, 'score': score.item()})
+
+                # same the file name and score to result json file in temp_dir
+                
+
+
+                score_acc += score
+                sample_num += 1
+
+    # Save the results to a JSON file
+    with open(result_file, 'w') as f:
+        json.dump(score_results, f)
 
     return score_acc / sample_num
 
@@ -243,10 +118,14 @@ def main():
     #     num_workers = min(num_cpus, 8) if num_cpus is not None else 0
     # else:
     #     num_workers = args.num_workers
-
+    # model = 'F:\\DatasetManagement\\flask_api\\utils\\clip\\model.safetensors'
     device = torch.device('cuda' if (torch.cuda.is_available()) else 'cpu')
-    print('Loading CLIP model: {}'.format('ViT-B/32'))
-    model, preprocess = clip.load('ViT-B/32', device=device)
+    # print('Loading CLIP model: {}'.format(model))
+    # model, preprocess = clip.load(model, device=device)
+    
+    model = CLIPModel.from_pretrained("openai/clip-vit-large-patch14")
+    processor = CLIPProcessor.from_pretrained("openai/clip-vit-large-patch14")
+
     
     # dataset = DummyDataset(args.real_path, args.fake_path,
     #                        args.real_flag, args.fake_flag,
@@ -255,10 +134,14 @@ def main():
     #                         num_workers=num_workers, pin_memory=True)
     
     print('Calculating CLIP Score:')
-    # input_dir = 'F:\\ImageSet\\dump\\mobcup_output'
-    # CLIP Score:  169.02114868164062
-    input_dir = "F:/lora_training/quality_training/20_photo"
-    clip_score = calculate_clip_score(input_dir, model, preprocess, device)
+    input_dir = 'F:/ImageSet/dump/mobcup_output'
+    # CLIP Score:  21.26517120524995
+    # 21.165674209594727
+    # input_dir = "F:/lora_training/quality_training/20_photo"
+    # 23.531064987182617
+    # input_dir = "F:/lora_training/qianqian/images/3_q_woman"
+    # 23.793838500976562
+    clip_score = calculate_clip_score(input_dir, model, processor, device)
     clip_score = clip_score.cpu().item()
     print('CLIP Score: ', clip_score)
 
