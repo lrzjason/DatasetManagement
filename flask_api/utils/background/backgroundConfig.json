@@ -1,0 +1,38 @@
+[
+  {
+    "name": "Coral",
+    "rgb": "255,127,80"
+  },
+  {
+    "name": "Turquoise",
+    "rgb": "64,224,208"
+  },
+  {
+    "name": "Lavender",
+    "rgb": "230,230,250"
+  },
+  {
+    "name": "Salmon",
+    "rgb": "250,128,114"
+  },
+  {
+    "name": "Teal",
+    "rgb": "0,128,128"
+  },
+  {
+    "name": "Black",
+    "rgb": "0,0,0"
+  },
+  {
+    "name": "White",
+    "rgb": "255,255,255"
+  },
+  {
+    "name": "Maroon",
+    "rgb": "0,0,128"
+  },
+  {
+    "name": "Gold",
+    "rgb": "255,215,0"
+  }
+]

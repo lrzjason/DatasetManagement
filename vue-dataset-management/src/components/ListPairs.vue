@@ -5,8 +5,8 @@
       </v-text-field>
     </v-col>
   </v-row> -->
-  <v-row>
-    <v-col cols="3">
+  <v-row no-gutters>
+    <v-col cols="3" v-show="!hideList">
       <h1>List of Files</h1>
       <v-card class="scrollable-list">
         <v-list>
@@ -20,9 +20,12 @@
           </v-list-item>
         </v-list>
       </v-card>
-      <v-textarea v-model="selectedPair.caption" label="Enter text here" rows="10"></v-textarea>
+      <!-- <v-textarea v-model="caption" label="Enter text here" rows="10"></v-textarea> -->
+      <v-text-field v-model="searchKeyword" label="search" rows="10"></v-text-field>
+      <v-btn class="floating-button" color="blue" icon
+        @click="searchPair"><v-icon>mdi-text-search</v-icon></v-btn>
     </v-col>
-    <v-col cols="9">
+    <v-col :cols="hideList?12:9" id="main-container">
       <div>Selected Pair: {{ selectedPair.name }} {{ savedPairs.length }} / {{ pairs.length }}</div>
       <!-- <div class="controls-wrapper">
         <div class="image-controls">
@@ -35,7 +38,7 @@
           <v-col v-for="(image,index) in getImageOrThumbnail(selectedPair)" :key="index">
             <span class="text-h5 image-classifier">{{ index }}</span>
             <!-- {{ image }} -->
-            <v-img :src="`http://127.0.0.1:5000/file/${image}?${updateKey}`">
+            <v-img class="image-el" :src="`http://127.0.0.1:5000/file/${image}?${updateKey}`">
               <template v-slot:placeholder>
                 <v-row class="fill-height ma-0" align="center" justify="center">
                   <v-progress-circular indeterminate color="grey-lighten-5"></v-progress-circular>
@@ -65,12 +68,27 @@
           <v-btn class="floating-button" icon @click="prevPair"><v-icon>mdi-chevron-left</v-icon></v-btn>
           <v-btn class="end-button" icon @click="nextPair"><v-icon>mdi-chevron-right</v-icon></v-btn>
         </div>
+        <!-- <div class="key-control">
+          <v-textarea id="key-control" width="200px" label="Key control here" rows="3"></v-textarea>
+        </div> -->
+      </div>
+      <div class="caption-control">
+        <v-textarea v-model="caption" hide-details variant="outlined" class="caption" label="caption" width="400px" auto-grow rows="1"></v-textarea>
       </div>
     </v-col>
   </v-row>
 </template>
 
-<style>
+<style scoped>
+.image-el{
+  max-height: calc(100vh - 110px);
+  margin-top: 75px;
+}
+.caption textarea {
+  text-align: center;
+  font-size: 1.2em;
+  color: white;
+}
 .image-classifier{
   color: white;
   position: absolute;
@@ -83,7 +101,6 @@
 }
 
 .image-container {
-  height:80vh;
   display: flex;
   align-items: center;
 }
@@ -98,6 +115,25 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 10px;
+}
+
+.caption-control{
+  background-color: rgba(0, 0, 0, 0.5);
+  width: 600px;
+  position: absolute;
+  bottom: 0px;
+  left: 35vw;
+  padding: 10px;
+}
+
+.key-control{
+  position: absolute;
+  top: 70px;
+  right: 50px;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  padding: 10px;
 }
 
 .image-buttons {
@@ -128,7 +164,13 @@
 import axios from 'axios';
 import { onMounted, ref, nextTick, onUnmounted, watch } from 'vue';
 
-const captions = ref('')
+const searchKeyword = ref('')
+
+const hideList = ref(false)
+
+const imageContainer = ref(null)
+
+const caption = ref('')
 const updateKey = ref(0)
 
 // const selectedImage = ref('')
@@ -182,7 +224,26 @@ const cachingFiles = ref([])
 const getPair = (pair,selectedIndexValue)=>{
   selectedPair.value = pair;
   selectedIndex.value = selectedIndexValue;
+  caption.value = pair.caption
   goTo(`#file-${selectedIndex.value}`)
+}
+
+
+const searchPair = ()=>{
+  console.log('searchKeyword.value',searchKeyword.value)
+  console.log('pairs.value',pairs.value)
+
+  // find pairs by searchKeyword
+  pairs.value.map((pair,index)=>{
+    if (pair.name == searchKeyword.value){
+      selectedPair.value = pair;
+      selectedIndex.value = index;
+      caption.value = pair.caption
+      goTo(`#file-${selectedIndex.value}`)
+      return
+    }
+  })
+
 }
 
 const switchPair = debounce((pair) => {
@@ -207,7 +268,7 @@ const savePair = debounce((pair) => {
   const formData = new FormData();
   formData.append('name', pair.name);
   formData.append('file_name', captionDir.value + '\\' + pair.name + '.txt');
-  formData.append('content', pair.caption);
+  formData.append('content', caption.value);
   // async save file
   nextPair();
 
@@ -271,7 +332,7 @@ const prevPair = () => {
 
 const nextPair = () => {
   if (selectedIndex.value < pairs.value.length - 1) {
-    if (pairs.value.length > 0) {
+    if (savedPairs.value.length < pairs.value.length && pairs.value.length > 0) {
       selectedIndex.value += 1
       let nextPair = pairs.value[selectedIndex.value]
       // find next unsaved pair
@@ -279,8 +340,10 @@ const nextPair = () => {
         selectedIndex.value += 1
         nextPair = pairs.value[selectedIndex.value]
       }
-      getPair(pairs.value[selectedIndex.value], selectedIndex.value);
+    }else{
+      selectedIndex.value += 1
     }
+    getPair(pairs.value[selectedIndex.value], selectedIndex.value);
   }
 }
 
@@ -348,11 +411,14 @@ const getImageOrThumbnail = (pair) =>{
 }
 
 const unbindKeyboardControls = () => {
-  window.removeEventListener('keydown', handleKeyboardControls);
+  // let container = document.querySelector('#key-control')
+  // console.log('container',container)
+  // container.removeEventListener('keydown', handleKeyboardControls);
+  document.removeEventListener('keydown', handleKeyboardControls);
 };
 
 const handleKeyboardControls = (event) => {
-  // console.log(event.key);
+  console.log(event.key);
   const focusedElement = document.activeElement;
   if (focusedElement.tagName !== 'TEXTAREA') {
     switch (event.key) {
@@ -381,7 +447,10 @@ const handleKeyboardControls = (event) => {
 onMounted(() => {
   // listFiles();
   listPairs();
-  window.addEventListener('keydown', handleKeyboardControls);
+  // let container = document.querySelector('#key-control')
+  // console.log('container',container)
+  // container.addEventListener('keydown', handleKeyboardControls);
+  document.addEventListener('keydown', handleKeyboardControls);
 })
 
 onUnmounted(() => {

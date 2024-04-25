@@ -1,6 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import PairsView from '../views/PairsView.vue'
+import PrepareView from '../views/PrepareView.vue'
+import GenerateImageView from '../views/GenerateImageView.vue'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 
 const router = createRouter({
@@ -16,6 +18,18 @@ const router = createRouter({
       path: '/pairs',
       name: 'pairs',
       component: PairsView,
+      meta: { layout: DefaultLayout }
+    },
+    {
+      path: '/prepare',
+      name: 'prepare',
+      component: PrepareView,
+      meta: { layout: DefaultLayout }
+    },
+    {
+      path: '/generateImage',
+      name: 'generateImageView',
+      component: GenerateImageView,
       meta: { layout: DefaultLayout }
     },
     {

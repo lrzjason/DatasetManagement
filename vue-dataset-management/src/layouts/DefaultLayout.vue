@@ -1,15 +1,3 @@
-<script setup>
-import { ref } from 'vue'
-
-let items = ref([
-  {
-    title:'test'
-  }
-])
-
-
-</script>
-
 <template>
   <div> 
     <v-app-bar app color="blue" dark>
@@ -27,14 +15,17 @@ let items = ref([
         </v-list> 
       </v-menu> -->
       <v-spacer></v-spacer>
-      <v-btn to="/home">
+      <v-btn v-for="btn in pages" :key="btn.label" :to="btn.url">
+        {{ btn.label }}
+      </v-btn>
+      <!-- <v-btn to="/home">
         <v-icon>mdi-magnify</v-icon>
         Home
       </v-btn>
       <v-btn to="/check">
         <v-icon>mdi-magnify</v-icon>
         Check
-      </v-btn>
+      </v-btn> -->
       <!-- <v-menu dark>
         <template v-slot:activator="{ props }">
           <v-btn
@@ -62,3 +53,25 @@ let items = ref([
     <v-footer app> <!-- footer content --> </v-footer> </div>
 </template>
 
+<script setup>
+import { ref } from 'vue'
+
+const pages = ref([
+  {
+    label:'File',
+    url:'/'
+  },
+  {
+    label:'Pairs',
+    url:'/pairs'
+  },
+  {
+    label:'Prepare',
+    url:'/prepare'
+  },
+  {
+    label:'Generate',
+    url:'/generateImage'
+  }
+])
+</script>

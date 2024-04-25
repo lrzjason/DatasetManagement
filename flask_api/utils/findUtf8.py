@@ -1,7 +1,7 @@
 import glob
 import chardet
 
-input_dir = "F:/ImageSet/dump/mobcup_output_clip_failed_recalc"
+input_dir = "F:/ImageSet/training_script_cotton_doll/test/cog_full"
 non_ascii_files = []
 
 for file_path in glob.glob(input_dir + "/*.txt"):

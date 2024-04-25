@@ -1,7 +1,7 @@
 import os
 from PIL import Image
 
-input_dir = 'F:\\ImageSet\\Pickscore_train_5k'
+input_dir = 'F:\\ImageSet\\Pickscore_train_10k'
 caption_folder = f'{input_dir}\\captions'
 image_folder = f'{input_dir}\\images'
 output_dir = f'{input_dir}\\images_thumbnails'

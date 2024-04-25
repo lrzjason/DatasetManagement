@@ -6,7 +6,7 @@
     </v-col>
   </v-row> -->
   <v-row>
-    <v-col cols="3">
+    <v-col cols="3"  v-show="!hideList">
       <h1>List of Files</h1>
       <v-card class="scrollable-list">
         <v-list>
@@ -25,9 +25,9 @@
           </v-list-item>
         </v-list>
       </v-card>
-      <v-textarea v-model="captions" label="Enter text here" rows="10"></v-textarea>
+      <v-textarea v-model="caption" label="Enter text here" rows="10"></v-textarea>
     </v-col>
-    <v-col cols="9">
+    <v-col :cols="hideList?12:9">
       <div>Selected Image: {{ selectedImageName }} {{ savedFiles.length }} / {{ files.length }}</div>
       <!-- <div class="controls-wrapper">
         <div class="image-controls">
@@ -36,7 +36,7 @@
         </div>
       </div> -->
       <div  class="image-container">
-        <v-img ref="selectedImageRef" :src="imageSrc">
+        <v-img ref="selectedImageRef" max-height="700px" :class="hideList?'left200':''" :src="imageSrc">
           <template v-slot:placeholder>
             <v-row
               class="fill-height ma-0"
@@ -57,31 +57,90 @@
           <v-btn class="end-button" icon @click="nextImage"><v-icon>mdi-chevron-right</v-icon></v-btn>
         </div>
       </div>
+    <div class="caption-control">
+      <v-textarea v-model="caption" hide-details variant="outlined" class="caption" label="caption" width="400px" auto-grow rows="1"></v-textarea>
+    </div>
+    <div class="caption-control-useful-words">
+      <v-textarea v-model="captionUseful" hide-details variant="outlined" class="caption" label="caption" width="400px" auto-grow rows="1"></v-textarea>
+    </div>
+    
     </v-col>
   </v-row>
 
 </template>
 
-<style>
-.controls-wrapper{
+<style scoped>
+.left200{
+  left:-200px;
+}
+.image-el{
+  max-height: calc(100vh - 110px);
+  margin-top: 75px;
+}
+.caption textarea {
+  text-align: center;
+  font-size: 1.2em;
+  color: white;
+}
+.image-classifier{
+  color: white;
+  position: absolute;
+  z-index: 999;
+}
+.controls-wrapper {
   position: relative;
   top: calc(100vh/2 + 100px - 50px);
   z-index: 9999;
 }
+
 .image-container {
+  display: flex;
+  align-items: center;
+  /* width: 512px; */
   max-height: 80vh;
-  position: relative;
 }
+
 .scrollable-list {
   max-height: calc(100vh - 450px);
   overflow-y: auto;
 }
+
 .image-controls {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 10px;
 }
+
+.caption-control-useful-words{
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  width: 600px;
+  position: absolute;
+  top: 100px;
+  right: 100px;
+  padding: 10px;
+}
+.caption-control{
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  width: 600px;
+  position: absolute;
+  bottom: 50px;
+  right: 100px;
+  padding: 10px;
+}
+
+.key-control{
+  position: absolute;
+  top: 70px;
+  right: 50px;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  padding: 10px;
+}
+
 .image-buttons {
   position: absolute;
   top: 0;
@@ -91,23 +150,29 @@
   align-items: flex-end;
   padding: 10px;
 }
+
 .floating-button {
   /* margin-bottom: 30px; */
   margin-right: 30px;
 }
+
 .end-button {
   margin-right: 50px;
 }
+
 .selected-file {
   background-color: #ddd;
 }
 </style>
 
+
 <script setup>
 import axios from 'axios';
 import { onMounted, ref, nextTick, onUnmounted, watch } from 'vue';
 
-const captions = ref('')
+const hideList = ref(true)
+const caption = ref('')
+const captionUseful = ref('Her right hand is raised, forming a call gesture.')
 
 const selectedImage = ref('')
 const selectedImageRef = ref(null)
@@ -115,7 +180,7 @@ const selectedImageIndex = ref(0)
 
 const files= ref([])
 const savedFiles = ref([])
-const imageDir = ref('F:\\ImageSet\\dump\\mobcup_output')
+const imageDir = ref('F:\\ImageSet\\hagrid_test\\call')
 
 // watch imageDir change, list files
 watch(imageDir, (newValue, oldValue) => {
@@ -184,7 +249,7 @@ const getImage = (imagePath, selectedIndexValue) => {
   const textFile = encodeURIComponent(imageDir.value + '/' + textFileName);
   axios.get(`http://127.0.0.1:5000/file/${textFile}`)
     .then(response => {
-      captions.value = response.data
+      caption.value = response.data
     })
     .catch(error => {
       console.log(error);
@@ -251,7 +316,7 @@ const saveFile = debounce((fileName) => {
   console.log('save file', fileName)
   const formData = new FormData();
   formData.append('file_name', imageDir.value + '\\' + fileName.split('.')[0] + '.txt');
-  formData.append('content', captions.value);
+  formData.append('content', caption.value);
   axios.post('http://127.0.0.1:5000/save', formData)
     .then(response => {
       console.log(response.data);
@@ -277,7 +342,7 @@ const deleteFile = debounce((fileName) => {
     if (selectedImageName.value === fileName) {
       selectedImage.value = '';
       selectedImageName.value = '';
-      captions.value = '';
+      caption.value = '';
       if (index < files.value.length) {
         getImage(files.value[index], index);
       } else if (index > 0) {

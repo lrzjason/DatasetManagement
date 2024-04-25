@@ -6,10 +6,58 @@ from PIL import Image
 from io import BytesIO
 import os
 import shutil
+import requests
+
+from utils.BingBrush import BingBrush 
+from pathlib import Path
+import datetime
 
 # Create a flask app
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
+
+@app.route('/save_generation', methods=['POST'])
+def save_generation():
+    urls = request.form.get('urls')
+    output_folder = request.form.get('output_folder')
+    save_name = request.form.get('save_name')
+    Path(output_folder).mkdir(parents=True, exist_ok=True)
+
+    for url in urls:
+        response = requests.get(url)
+        if response.status_code == 200:
+            file_name = url.split("/")[-1]
+            if save_name != "":
+                file_name = save_name+"_"+datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
+            save_path = os.path.join(output_folder, file_name) + ".webp"
+
+            with open(save_path, "wb") as file:
+                file.write(response.content)
+            print(f"Save image to: {save_path}")
+        else:
+            print("Download failed!")
+
+@app.route('/generate', methods=['POST'])
+def generate():
+    # image_ext = ".webp"
+    # Get the path parameter from the request
+    # output_folder = request.form.get('output_folder')
+    # Get the path parameter from the request
+    bing_cookie_path = request.form.get('bing_cookie_path')
+    # Get the path parameter from the request
+    prompt = request.form.get('prompt')
+    # Check if the path is valid
+    # if not output_folder:
+    #     return 'Invalid path', 400
+    
+    brush = BingBrush(cookie=bing_cookie_path)
+    img_urls = brush.process(prompt=prompt)
+
+    if img_urls == -1:
+        print('Generation Failed.')
+        return 'Generation Failed', 400
+    
+    return {'img_urls': img_urls}, 200
 
 
 # Define a route for the list function
@@ -110,7 +158,8 @@ def list_pairs():
                 "name": caption_name,
                 "caption": content,
                 "images":images,
-                "thumbnails":thumbnails
+                "thumbnails":thumbnails,
+
             })
 
     # Return the list as a JSON response
@@ -122,6 +171,7 @@ def list_pairs():
             data = json.load(f)
         for file in data:
             saved_pairs.append(file)
+
     # Return the list as a JSON response
     return {'pairs': pairs, 'saved_pairs': saved_pairs}, 200
 
@@ -162,6 +212,65 @@ def save_pair():
     return {'message': 'Pair saved successfully','saved_pairs': data}, 200
 
 
+# Define a route for the switch function
+@app.route('/save_to_target', methods=['POST'])
+def save_to():
+
+    # Get the file name parameter from the request
+    file_name = request.form.get('file_name')
+    # Get the file name parameter from the request
+    save_from = request.form.get('save_from')
+    # Get the file name parameter from the request
+    save_to = request.form.get('save_to')
+    # Get the file name parameter from the request
+    label = request.form.get('label')
+    # Get the file name parameter from the request
+    self_remove = request.form.get('self_remove')
+
+    source_path = os.path.join(save_from,file_name)
+    target_dir = os.path.join(save_to,label)
+    target_path = os.path.join(target_dir,file_name)
+
+    json_file = 'saved_dataset.json'
+    if not os.path.exists(target_dir):
+        os.mkdir(target_dir)
+    if os.path.exists(json_file):
+        with open(json_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+    else:
+        data = {}
+
+    
+    if not os.path.exists(save_to):
+        os.mkdir(save_to)
+    
+    
+    for label_dir in os.listdir(save_to):
+        if label_dir not in data:
+            data[label_dir] = []
+        if file_name in os.listdir(os.path.join(save_to,label_dir)):
+            exist_file = os.path.join(save_to,label_dir,file_name)
+            # skip self
+            if os.path.join(save_to,label_dir) == save_from:
+                continue
+            print('remove exist file', exist_file)
+            # remove previous
+            os.remove(exist_file)
+
+    # move switch_from to temp folder
+    if os.path.exists(source_path):
+        shutil.copy(source_path,target_path)
+    
+    if self_remove:
+        os.remove(source_path)
+    
+    for label_dir in os.listdir(save_to):
+        data[label_dir] = os.listdir(os.path.join(save_to,label_dir))
+
+    with open(json_file, 'w', encoding='utf-8') as f:
+        json.dump(data, f)
+    # Return a success message as a JSON response
+    return {'message': 'File saved successfully','saved_dataset': data}, 200
 
 # Define a route for the switch function
 @app.route('/switch_pair', methods=['POST'])
@@ -193,7 +302,6 @@ def switch_pair():
         shutil.move(switch_from,temp_file)
         if os.path.exists(thumbnail_from):
             shutil.move(thumbnail_from,temp_thumbnail)
-        
     
     # move switch_to to switch_from
     if os.path.exists(switch_to):
@@ -286,6 +394,36 @@ def delete_pair():
     return {'message': 'File deleted successfully'}, 200
 
 
+# Define a route for the list function
+@app.route('/list_dataset', methods=['POST'])
+def list_dataset():
+    # Get the path parameter from the request
+    path = request.form.get('path')
+    # Check if the path is valid
+    if not path:
+        return 'Invalid path', 400
+    # Import os module to list files
+    import os
+    # Initialize an empty list to store file names
+    files = []
+    # Loop through all files in the given path
+    for file in os.listdir(path):
+        # Check if the file has .png or .jpg extension
+        if file.endswith('.png') or file.endswith('.jpg'):
+            # Append the file name to the list
+            files.append(file)
+    # Return the list as a JSON response
+    # Read the saved_files.json file and append the saved file names to the list
+    json_file = 'saved_dataset.json'
+    saved_files = []
+    if os.path.exists(json_file):
+        with open(json_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            for key in data:
+                saved_files += data[key]
+    # Return the list as a JSON response
+    return {'files': files, 'saved_files': saved_files}, 200
+
 
 # Define a route for the list function
 @app.route('/list', methods=['POST'])
@@ -331,9 +469,9 @@ def save_file():
         return 'File name must have .txt extension', 400
     # Import os module to write to the file
     if os.path.exists(file_name):
-        with open(file_name, 'r', encoding='utf-8') as f:
-            existing_content = f.read()
-        if not (len(existing_content) == len(content)):
+        # with open(file_name, 'r', encoding='utf-8') as f:
+        #     existing_content = f.read()
+        # if not (len(existing_content) == len(content)):
             # Open the file in write mode and overwrite its content
             with open(file_name, 'w', encoding='utf-8') as f:
                 f.write(content)
