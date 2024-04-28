@@ -48,7 +48,6 @@ for file in os.listdir(input_dir):
             content = content.replace('\n',' ')
             f.close()
 
-
         if "Answer:" in content:
             content = content[:content.index("Answer:")]
 
@@ -57,17 +56,6 @@ for file in os.listdir(input_dir):
             sentence_start = content.rfind('.', 0, start) + 1
             content = content[:sentence_start]
 
-        # if "word " in content:
-        #     start = content.find("word ")
-        #     sentence_start = content.rfind('.', 0, start) + 1
-        #     content = content[:sentence_start]
-
-        
-        # if "text " in content:
-        #     start = content.find("text ")
-        #     sentence_start = content.rfind('.', 0, start) + 1
-        #     content = content[:sentence_start]
-            
         if "caption " in content:
             start = content.find("caption ")
             sentence_start = content.rfind('.', 0, start) + 1

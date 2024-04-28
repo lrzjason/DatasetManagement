@@ -31,7 +31,7 @@
         </div>
       </div> -->
       <div class="image-container">
-        <v-img ref="selectedImageRef" max-height="900px" :class="hideList ? 'left200' : ''" :src="imageSrc">
+        <v-img ref="selectedImageRef" max-height="700px" :class="hideList ? 'left200' : ''" :src="imageSrc">
           <template v-slot:placeholder>
             <v-row class="fill-height ma-0" align="center" justify="center">
               <v-progress-circular indeterminate color="grey-lighten-5"></v-progress-circular>
@@ -177,19 +177,27 @@ import { onMounted, ref, nextTick, onUnmounted, watch } from 'vue';
 
 const datasetConfig = ref([
   {
-    label: 'right_hand',
+    label: 'worst',
+    bindKey: 'h'
+  },
+  {
+    label: 'bad',
     bindKey: 'j'
   },
   {
-    label: 'left_hand',
+    label: 'good',
     bindKey: 'k'
+  },
+  {
+    label: 'amazing',
+    bindKey: 'l'
   },
   
 ])
 
 const hideList = ref(true)
 const caption = ref('')
-const captionUseful = ref('Her right hand is raised, forming a call gesture.')
+// const captionUseful = ref('')
 
 const selectedImage = ref('')
 const selectedImageRef = ref(null)
@@ -197,9 +205,9 @@ const selectedImageIndex = ref(0)
 
 const files = ref([])
 const savedFiles = ref([])
-const imageDir = ref('F:\\ImageSet\\hagrid_test\\hand_classifier\\right_hand')
-const saveToDir = ref('F:\\ImageSet\\hagrid_test\\hand_classifier')
-const selfRemove = ref(true)
+const imageDir = ref('F:\\ImageSet\\pickscore_random_captions_pag_ays_parent\\pickscore_random_captions_pag_ays')
+const saveToDir = ref('F:\\ImageSet\\pickscore_random_captions_train')
+const selfRemove = ref(false)
 
 // watch imageDir change, list files
 watch(imageDir, (newValue, oldValue) => {
@@ -274,7 +282,7 @@ const getImage = (imagePath, selectedIndexValue) => {
   //     console.log(error);
   //   })
   // Auto-scroll to the selected file
-  goTo(`#file-${selectedIndex.value}`)
+  // goTo(`#file-${selectedIndex.value}`)
   const prevFiles = files.value.slice(Math.max(0, selectedImageIndex.value - 10), selectedImageIndex.value);
   const nextFiles = files.value.slice(selectedImageIndex.value + 1, selectedImageIndex.value + 11);
   const uncachedFiles = prevFiles.concat(nextFiles).filter(file => imageCacheList.findIndex((item) => item.path === file) === -1);
@@ -330,7 +338,7 @@ const getCachedImageData = (imagePath) => {
 
 const saveToTarget = debounce((fileName, label) => {
   // Auto-scroll to the selected file
-  goTo(`#file-${selectedIndex.value + 1}`)
+  // goTo(`#file-${selectedIndex.value + 1}`)
   console.log('save to', fileName)
   const index = files.value.indexOf(fileName);
   const formData = new FormData();
@@ -421,15 +429,15 @@ const deleteFile = debounce((fileName) => {
       console.log(error);
     })
   // Auto-scroll to the selected file
-  goTo(`#file-${selectedIndex.value}`)
+  // goTo(`#file-${selectedIndex.value}`)
 }, 1000)
 
-const goTo = (selector) => {
-  const element = document.querySelector(selector);
-  if (element) {
-    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }
-}
+// const goTo = (selector) => {
+//   const element = document.querySelector(selector);
+//   if (element) {
+//     element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+//   }
+// }
 
 const prevImage = () => {
   if (selectedImageIndex.value > 0) {

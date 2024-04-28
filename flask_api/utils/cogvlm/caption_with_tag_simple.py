@@ -13,28 +13,7 @@ from PIL import Image
 from transformers import AutoModelForCausalLM, LlamaTokenizer
 import os
 import time
-import re
 
-def convert_character_tags(text):
-    # split the text by ','
-    characters = text.split(',')
-    # create an empty list to store the converted strings
-    result = []
-    # loop through each character and game
-    for char in characters:
-        if '(' in char:
-            # split the char by '(' and ')'
-            parts = char.split('(')
-            # get the character name from the first part
-            character = parts[0].strip()
-            # get the game name from the second part
-            game = parts[1].split(')')[0].strip()
-            # format the string and append it to the result list
-            result.append(f'{character} from {game}')
-        else:
-            result.append(char)
-    # return the result list
-    return result
 
 # model_default = "THUDM/cogagent-chat-hf"
 model_default = "THUDM/cogvlm-chat-hf"
@@ -92,29 +71,10 @@ gen_kwargs = {
     "do_sample": True,
     "temperature": 0.6,
 } 
-# gen_kwargs = {
-#     'min_new_tokens':10,
-#     'max_new_tokens':200,
-#     'num_beams':2,
-#     'length_penalty':1,
-#     'top_k':50,
-#     'top_p':1,
-#     'repetition_penalty': 1,
-#     'no_repeat_ngram_size':3,
-#     "do_sample": True,
-#     "temperature": 0.3
-# } 
-
-# text_only_template = "A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the user's questions. USER: {} ASSISTANT:"
-# image_path = 'F:/ImageSet/hagrid_filter/call_2048/clear/00f1315f-b17e-48e2-9464-7c36b025ad4d.jpg'
-
-# input_dir = 'F:/ImageSet/hagrid_filter'
-# input_dir = 'F:/ImageSet/anime_dataset/genshin_classified'
-# input_dir = 'F:/ImageSet/anime_dataset/genshin_test'
-
-# input_dir = 'F:/ImageSet/training_script_cartoon_dool/train'
-# input_dir =  "F:/ImageSet/vit_train/hand-classifier"
-input_dir = "F:/ImageSet/openxl2_realism_test_output/image_cog"
+# input_dir = "F:/ImageSet/openxl2_realism_test_output/image_cog"
+input_dir = "path/to/image/dir"
+# image_ext = '.jpg'
+image_ext = '.webp'
 
 subsets = os.listdir(input_dir)
 total_subset = len(subsets)
@@ -126,15 +86,8 @@ start_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 
 print(f'Start time: {start_time}')
 
-# skip_subset = ['aether', 'albedo', 'amber', 'arataki_itto', 'barbara', 'beidou', 'boo_tao', 'c.c', 'chongyun', 'diluc', 'eula', 'fischl', 'fu_hua', 'ganyu', 'gorou', 'hatsune_miku', 'hu_tao', 'illustrious', 'jean', 'kaedehara_kazuha', 'kaeya', 'kamisato_ayaka', 'kamisato_ayato', 'keqing', 'kiana_kaslana', 'klee', 'kujou_sara', 'kuki_shinobu', 'lisa', 'lumine', 'mona', 'multiple_character', 'nahida', 'nanashi_mumei', 'nilou', 'ningguang', "ninomae_ina'nis", 'noelle', 'ouro_kronii', 'paimon', 'pyra', 'qiqi', 'raiden_mei', 'raiden_shogun', 'razor', 'rosaria', 'sangonomiya_kokomi', 'scaramouche', 'seele_vollerei', 'shenhe', 'slime', 'sucrose', 'tartaglia', 'tennouji_rina', 'thoma', 'two_character', 'usada_pekora', 'venti', 'xiangling', 'xiao', 'xingqiu', 'yae_miko', 'yae_sakura', 'yanfei', 'yelan', 'yoimiya', 'yorha_no._2_type_b', 'zhongli']
-# skip_subset = ['aether', 'albedo', 'amber', 'arataki_itto', 'barbara', 'beidou', 'boo_tao', 'c.c', 'chongyun', 'diluc', 'eula', 'fischl', 'fu_hua', 'ganyu', 'gorou', 'hatsune_miku', 'hu_tao', 'illustrious', 'jean', 'kaedehara_kazuha', 'kaeya', 'kamisato_ayaka', 'kamisato_ayato', 'keqing', 'kiana_kaslana', 'klee', 'kujou_sara', 'kuki_shinobu', 'lisa', 'lumine', 'mona', 'multiple_character', 'nahida', 'nanashi_mumei', 'nilou']
-# skip_subset = ['aether', 'albedo', 'amber', 'arataki_itto', 'barbara', 'beidou', 'boo_tao', 'c.c', 'chongyun', 'diluc', 'eula', 'fischl', 'fu_hua', 'ganyu', 'gorou', 'hatsune_miku', 'hu_tao', 'illustrious', 'jean', 'kaedehara_kazuha', 'kaeya', 'kamisato_ayaka', 'kamisato_ayato', 'keqing', 'kiana_kaslana', 'klee', 'kujou_sara', 'kuki_shinobu', 'lisa', 'lumine', 'mona', 'multiple_character', 'nahida', 'nanashi_mumei', 'nilou', 'ningguang', "ninomae_ina'nis", 'noelle', 'ouro_kronii', 'paimon', 'pyra', 'qiqi', 'raiden_mei', 'raiden_shogun']
-# skip_subset = ['aether', 'albedo', 'amber', 'arataki_itto', 'barbara', 'beidou', 'boo_tao', 'c.c', 'chongyun', 'diluc', 'eula', 'fischl', 'fu_hua', 'ganyu', 'gorou', 'hatsune_miku', 'hu_tao', 'illustrious', 'jean', 'kaedehara_kazuha', 'kaeya', 'kamisato_ayaka', 'kamisato_ayato', 'keqing', 'kiana_kaslana', 'klee', 'kujou_sara', 'kuki_shinobu', 'lisa', 'lumine', 'mona', 'multiple_character', 'nahida', 'nanashi_mumei', 'nilou', 'ningguang', "ninomae_ina'nis", 'noelle', 'ouro_kronii', 'paimon', 'pyra', 'qiqi', 'raiden_mei']
-
 skip_subset = []
 
-# image_ext = '.jpg'
-image_ext = '.webp'
 
 for subset_dir in subsets:
     count_subset+=1
@@ -142,13 +95,13 @@ for subset_dir in subsets:
         print(f'skip subset_dir: {count_subset}/{total_subset} {subset_dir}')
         continue
     print(f'processing subset_dir: {count_subset}/{total_subset} {subset_dir}')
-    character_dir = os.path.join(input_dir, subset_dir)
-    images = os.listdir(character_dir)
+    subset_dir_path = os.path.join(input_dir, subset_dir)
+    images = os.listdir(subset_dir_path)
 
     # list to store files
     images = []
     # Iterate directory
-    for f in os.listdir(character_dir):
+    for f in os.listdir(subset_dir_path):
         # check only text files
         if f.endswith(image_ext):
             images.append(f)
@@ -158,15 +111,15 @@ for subset_dir in subsets:
     for image_name in images:
         count_image+=1
         print(f'processing image: {count_image}/{total_image} {image_name}')
-        image_path = os.path.join(character_dir, image_name)
+        image_path = os.path.join(subset_dir_path, image_name)
         print(f'Processing {image_path}')
     
         filename = os.path.splitext(os.path.basename(image_path))[0]
         filename, ext = os.path.splitext(image_name)
 
         file_name = image_name.split('.')[0]
-        old_txt_file_path = os.path.join(character_dir, file_name+'.txt')
-        txt_file_path = os.path.join(character_dir, filename+'.txt')
+        old_txt_file_path = os.path.join(subset_dir_path, file_name+'.txt')
+        txt_file_path = os.path.join(subset_dir_path, filename+'.txt')
         print(txt_file_path)
 
         if os.path.exists(old_txt_file_path):
@@ -200,17 +153,10 @@ for subset_dir in subsets:
 
         force_words_ids = None
         force_words = []
-        # if args.force_words is not None and args.force_words!="":
-        #     force_words = args.force_words.split(",") if args.force_words is not None else []
-        # else:
-        #   force_words = convert_character_tags(character_name)
         force_words_ids = tokenizer(force_words, add_special_tokens=False)["input_ids"] if force_words else []
         # print(f"** force_words: {force_words}")
 
         bad_words_ids = None
-        # if args.bad_words is not None and args.bad_words!="":
-        #     bad_words = args.bad_words.split(",") if args.bad_words is not None else []
-        # else:
         bad_words = []
         bad_words_ids = tokenizer(bad_words, add_special_tokens=False)["input_ids"] if bad_words else []
 
@@ -223,7 +169,37 @@ for subset_dir in subsets:
             outputs = outputs[:, inputs['input_ids'].shape[1]:]
             response = tokenizer.decode(outputs[0])
             response = response.split("</s>")[0]
-            print(response)
+            
+            # trancate hallucination 
+            if "Answer:" in response:
+                response = response[:response.index("Answer:")]
+
+            if "watermark" in response:
+                start = response.find("watermark")
+                sentence_start = response.rfind('.', 0, start) + 1
+                response = response[:sentence_start]
+
+            if "caption " in response:
+                start = response.find("caption ")
+                sentence_start = response.rfind('.', 0, start) + 1
+                response = response[:sentence_start]
+
+            if "signature " in response:
+                start = response.find("signature ")
+                sentence_start = response.rfind('.', 0, start) + 1
+                response = response[:sentence_start]
+
+            if "signed by " in response:
+                start = response.find("signed by ")
+                sentence_start = response.rfind('.', 0, start) + 1
+                response = response[:sentence_start]
+
+            if "bottom right corner" in response:
+                start = response.find("bottom right corner")
+                sentence_start = response.rfind('.', 0, start) + 1
+                response = response[:sentence_start]
+
+            
             with open(txt_file_path, 'w', encoding="utf-8") as f:
                 f.write(response)
                 f.close()

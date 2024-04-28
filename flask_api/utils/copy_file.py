@@ -19,7 +19,8 @@ def get_webp_params(filesize_mb):
 # loop below_list and upon_list to get .jpg and .txt data
 # copy .jpg and .txt to output dir
 
-input_dir = 'F:/ImageSet/openxl2_realism/temp'
+# input_dir = 'F:/ImageSet/openxl2_realism/temp'
+input_dir = 'F:/ImageSet/openxl2_worst'
 output_dir = 'F:/ImageSet/vit_train/crop_predict'
 
 count = 0

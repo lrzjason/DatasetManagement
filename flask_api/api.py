@@ -409,7 +409,7 @@ def list_dataset():
     # Loop through all files in the given path
     for file in os.listdir(path):
         # Check if the file has .png or .jpg extension
-        if file.endswith('.png') or file.endswith('.jpg'):
+        if file.endswith('.png') or file.endswith('.jpg') or file.endswith('.webp'):
             # Append the file name to the list
             files.append(file)
     # Return the list as a JSON response
@@ -440,7 +440,7 @@ def list_files():
     # Loop through all files in the given path
     for file in os.listdir(path):
         # Check if the file has .png or .jpg extension
-        if file.endswith('.png') or file.endswith('.jpg'):
+        if file.endswith('.png') or file.endswith('.jpg') or file.endswith('.webp'):
             # Append the file name to the list
             files.append(file)
     # Return the list as a JSON response
@@ -507,7 +507,9 @@ def get_file(file_name):
     elif file_name.endswith('.jpg'):
         mimetype = 'image/jpeg'
         is_image = True
-    
+    elif file_name.endswith('.webp'):
+        mimetype = 'image/webp'
+        is_image = True
     if is_image:
         # replace file dir to thumbnail dir
         # get file dir

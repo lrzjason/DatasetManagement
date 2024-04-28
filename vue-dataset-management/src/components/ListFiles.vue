@@ -172,7 +172,7 @@ import { onMounted, ref, nextTick, onUnmounted, watch } from 'vue';
 
 const hideList = ref(true)
 const caption = ref('')
-const captionUseful = ref('Her right hand is raised, forming a call gesture.')
+const captionUseful = ref('')
 
 const selectedImage = ref('')
 const selectedImageRef = ref(null)
@@ -180,7 +180,7 @@ const selectedImageIndex = ref(0)
 
 const files= ref([])
 const savedFiles = ref([])
-const imageDir = ref('F:\\ImageSet\\hagrid_test\\call')
+const imageDir = ref('F:\\ImageSet\\pickscore_random_captions_pag_ays_parent\\pickscore_random_captions_pag_ays')
 
 // watch imageDir change, list files
 watch(imageDir, (newValue, oldValue) => {

@@ -5,9 +5,10 @@ import os
 import json
 
 # Define the folder path and the output file name
-input_dir = "F:/ImageSet/vit_train/hand-classifier/1_good_hand"
+# input_dir = "F:/ImageSet/vit_train/hand-classifier/1_good_hand"
+input_dir = "F:/ImageSet/openxl2_worst/1_worst_image"
 
-prefix = ''
+prefix = 'worst quality, worst anatomy, distortion'
 # suffix = ', 8k photo, high quality'
 suffix = ''
 
@@ -46,8 +47,7 @@ for file in os.listdir(input_dir):
         with open(full_path, "r", encoding="utf-8") as f:
             content = f.read()
             f.close()
-        if 'Answer:' in content:
-            content = content[:content.index('Answer:')]
-        # content = prefix + content + suffix
-        # with open(full_path, "r+", encoding="utf-8") as out_f:
-        #     out_f.write(content)
+        
+        content = prefix + ', ' + content
+        with open(full_path, "r+", encoding="utf-8") as out_f:
+            out_f.write(content)

@@ -1,7 +1,7 @@
 import os
 from PIL import Image
 
-input_dir = 'F:\\ImageSet\\Pickscore_train_5k'
+input_dir = 'F:\\ImageSet\\pickscore_random_captions_pag_ays_parent'
 output_dir = os.path.join(input_dir, "thumbnails")
 print("output_dir",output_dir)
 
@@ -9,9 +9,10 @@ if not os.path.exists(output_dir):
     print("creating output_dir",output_dir)
     os.makedirs(output_dir)
 
-for filename in os.listdir(input_dir):
-    if filename.endswith(".jpg") or filename.endswith(".jpeg") or filename.endswith(".png"):
-        image_path = os.path.join(input_dir, filename)
+folder_dir = 'F:/ImageSet/pickscore_random_captions_pag_ays_parent/pickscore_random_captions_pag_ays'
+for filename in os.listdir(folder_dir):
+    if filename.endswith(".jpg") or filename.endswith(".jpeg") or filename.endswith(".png") or filename.endswith(".webp"):
+        image_path = os.path.join(folder_dir, filename)
         output_path = os.path.join(output_dir, filename)
         if os.path.exists(output_path):
             print("skipping",output_path)
