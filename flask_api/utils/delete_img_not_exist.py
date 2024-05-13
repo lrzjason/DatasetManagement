@@ -1,7 +1,7 @@
 import glob
 import os
 
-input_dir = "F:/ImageSet/dump/mobcup_output"
+input_dir = "F:/ImageSet/openxl2_creative2_fix_saturation/1_lexica_ori"
 
 # loop through each .txt file in input_dir
 # if the .jpg file with the same name does not exist, delete the .txt file

@@ -87,20 +87,18 @@ def convert_image_to_generation_width_height(width, height):
     return closest_ratio[1]
     
 
-# output_dir = "F:/ImageSet/openxl2_realism_above_average_pag"
-# output_dir = "F:/ImageSet/openxl2_realism_test_output"
-output_dir = "F:/ImageSet/pickscore_random_captions_pag_ays"
-# output_dir = "F:/ImageSet/pickscore_random_captions_ays"
+output_dir = "F:/ImageSet/pickscore_random_captions_worst_23"
 if not os.path.exists(output_dir):
     os.mkdir(output_dir)
 
 # input_dir = "F:/ImageSet/openxl2_realism_test"
 # input_dir = "F:/ImageSet/openxl2_realism_above_average"
 # input_dir = "F:/ImageSet/openxl2_realism_test"
-input_dir = "F:/ImageSet/pickscore_random_captions"
+input_dir = "F:/ImageSet/pickscore_random_captions/temp"
 
 # model_path = "F:/models/Stable-diffusion/sdxl/o2/o2b9_o14_115_00001_.safetensors"
-model_path = "F:/models/Stable-diffusion/sdxl/o2/openxl2_016e.safetensors"
+# model_path = "F:/models/Stable-diffusion/sdxl/o2/openxl2_016e.safetensors"
+model_path = "F:/models/Stable-diffusion/sdxl/o2/openxl2_022.safetensors"
 
 pipeline = StableDiffusionXLPipeline.from_single_file(
     model_path,variant="fp16", use_safetensors=True, 
@@ -108,14 +106,15 @@ pipeline = StableDiffusionXLPipeline.from_single_file(
 
 compel = Compel(tokenizer=[pipeline.tokenizer, pipeline.tokenizer_2] , text_encoder=[pipeline.text_encoder, pipeline.text_encoder_2], returned_embeddings_type=ReturnedEmbeddingsType.PENULTIMATE_HIDDEN_STATES_NON_NORMALIZED, requires_pooled=[False, True])
 
-neg_prompt = "deformed, blurry, bad anatomy, disfigured, poorly drawn face, mutation, mutated, extra_limb, ugly, poorly drawn hands, two heads, child, children, kid, gross, mutilated, disgusting, horrible, scary, evil, old, conjoined, morphed, text, error, glitch, lowres, extra digits, watermark, signature, jpeg artifacts, low quality, unfinished, cropped, Siamese twins, robot eyes, loli, "
+# neg_prompt = "deformed, blurry, bad anatomy, disfigured, poorly drawn face, mutation, mutated, extra_limb, ugly, poorly drawn hands, two heads, child, children, kid, gross, mutilated, disgusting, horrible, scary, evil, old, conjoined, morphed, text, error, glitch, lowres, extra digits, watermark, signature, jpeg artifacts, low quality, unfinished, cropped, Siamese twins, robot eyes, loli, "
+neg_prompt = ""
 negative_prompt_embeds,negative_pooled_prompt_embeds = compel(neg_prompt)
 
 image_ext = ['.png','.jpg','.jpeg','.webp']
 caption_ext = '.txt'
 
 # output_image_ext = '.webp'
-output_image_ext = '.webp'
+output_image_ext = '.png'
 
 seed = 1231231
 
@@ -138,15 +137,15 @@ count = 0
 # eval
 ae_model,image_encoder,preprocess,device = aesthetic_predict.init_model()
 
-# scheduler = DPMSolverMultistepScheduler(
-#     beta_start=0.00085, beta_end=0.012, beta_schedule="scaled_linear", num_train_timesteps=1000, 
-#     use_lu_lambdas=True,algorithm_type='dpmsolver++',solver_order=3
-# )
-
-ays_scheduler = DPMSolverMultistepSchedulerAYS(
+scheduler = DPMSolverMultistepScheduler(
     beta_start=0.00085, beta_end=0.012, beta_schedule="scaled_linear", num_train_timesteps=1000, 
     use_lu_lambdas=True,algorithm_type='dpmsolver++',solver_order=3
 )
+
+# ays_scheduler = DPMSolverMultistepSchedulerAYS(
+#     beta_start=0.00085, beta_end=0.012, beta_schedule="scaled_linear", num_train_timesteps=1000, 
+#     use_lu_lambdas=True,algorithm_type='dpmsolver++',solver_order=3
+# )
 
 
 # scheduler = DEISMultistepScheduler(
@@ -154,16 +153,18 @@ ays_scheduler = DPMSolverMultistepSchedulerAYS(
 #     solver_order=3
 # )
 
-pipeline.scheduler = ays_scheduler
+pipeline.scheduler = scheduler
 guidance_scale = 3.5
-steps = 10
+steps = 30
 
 sampling_schedule = [999, 845, 730, 587, 443, 310, 193, 116, 53, 13, 0]
 
 sampler = "DPM++ 3M SDE Karras"
 model_name="openxlVersion23_v23e"
 
-
+# prefix = 'worst quality, worst anatomy, distortion, abstract, '
+prefix = ''
+suffix = ''
 
 for subdir in tqdm(os.listdir(input_dir),position=0):
     subdir_path = os.path.join(input_dir, subdir)
@@ -203,6 +204,8 @@ for subdir in tqdm(os.listdir(input_dir),position=0):
                 prompt = f.read()
                 f.close()
             prompt = prompt.replace('/n', ' ')
+
+            prompt = f'{prefix}{prompt}{suffix}'
             
             positive_prompt_embeds, positive_pooled_prompt_embeds = compel(prompt)
             pag_image = pipeline(prompt_embeds=positive_prompt_embeds, 
@@ -211,7 +214,7 @@ for subdir in tqdm(os.listdir(input_dir),position=0):
                             negative_pooled_prompt_embeds=negative_pooled_prompt_embeds,
                             num_inference_steps=steps,
                             guidance_scale=guidance_scale,
-                            timesteps=sampling_schedule,
+                            # timesteps=sampling_schedule,
                             width=width_height[0], 
                             height=width_height[1],
                             # euler_at_final=True,
@@ -230,9 +233,9 @@ for subdir in tqdm(os.listdir(input_dir),position=0):
             del pag_image
 
             # save metadata as seperate file
-            metadata_file_path = output_pag_file_path.replace(output_image_ext, '.metadata')
-            with open(metadata_file_path, 'w', encoding="utf-8") as f:
-                f.write(parameters)
+            # metadata_file_path = output_pag_file_path.replace(output_image_ext, '.metadata')
+            # with open(metadata_file_path, 'w', encoding="utf-8") as f:
+            #     f.write(parameters)
             
             # save text as seperate file
             txt_file_path = output_pag_file_path.replace(output_image_ext, '.txt')

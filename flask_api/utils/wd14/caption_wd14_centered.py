@@ -58,12 +58,7 @@ def run_model(image_path, model_path, tags_path, session, tag_threshold, filter_
     # print('tags_filtered')
     # print(tags_filtered)
     return tags_filtered
-
-ILLEGAL_NTFS_CHARS = "[<>:/\\|?*\"]|[\0-\31]"
-def __removeIllegalChars(name):
-    # removes characters that are invalid for NTFS
-    return re.sub(ILLEGAL_NTFS_CHARS, "", name)
-
+    
 def main(image_folder, model_repo_ids, tag_threshold, filter_tags, stack_models):
     sessions = []
     tags_paths = []

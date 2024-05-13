@@ -42,8 +42,8 @@ def main():
     # input_directory = input("Enter the path to the input directory: ")
     # output_directory = input("Enter the path to the output directory: ")
     # target_saturation = float(input("Enter the target mean saturation (0-255): "))
-    input_directory = "F:/ImageSet/openxl2_realism_above_average/1_cog"
-    output_directory = "F:/ImageSet/openxl2_realism_above_average/1_cog_fix_saturation"
+    input_directory = "F:/ImageSet/openxl2_creative/30_raw_photo"
+    output_directory = "F:/ImageSet/openxl2_creative_fix_saturation/30_raw_photo"
     target_saturation = float(76)
 
     # Process the images

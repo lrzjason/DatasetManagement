@@ -7,9 +7,11 @@ import re
 
 # Define the folder path and the output file name
 # input_dir = "F:/ImageSet/vit_train/hand-classifier/1_good_hand"
-input_dir = "F:/ImageSet/openxl2_worst_23/10_worst_image_23"
+input_dir = "F:/ImageSet/openxl2_creative2_fix_saturation/10_lexica"
+ref_dir = "F:/ImageSet/openxl2_creative2/10_raw_photo"
 
-prefix = 'worst quality, worst anatomy, distortion, '
+
+prefix = ''
 # suffix = ', 8k photo, high quality'
 suffix = ''
 
@@ -41,26 +43,35 @@ suffix = ''
 # def remove_non_ascii(text):
 #     return re.sub(r'[^/x00-/x7F]*[/ ]', '_', text)
 
-for file in os.listdir(input_dir):
+for file in os.listdir(ref_dir):
     # Check if the file is an image by its extension
     if file.endswith((".txt")):
         # Join the folder path and the file name to get the full path
-        full_path = os.path.join(input_dir, file)
+        ref_path = os.path.join(ref_dir, file)
         content = ''
-        print(full_path)
+        print(ref_path)
+        # Append the full path to the list
+        with open(ref_path, "r", encoding="utf-8") as f:
+            content = f.read()
+            content = content.replace('/n', '').strip()
+            f.close()
+        
+        of_index = content.index(' of ')
+        if of_index>0:
+            prefix = content[:of_index+4]
+        print(prefix)
+
+        content = ""
+        full_path = os.path.join(input_dir, file)
         # Append the full path to the list
         with open(full_path, "r", encoding="utf-8") as f:
             content = f.read()
             content = content.replace('/n', '').strip()
             f.close()
-        
-        # if content.startswith("creative photo of "):
-        #     suffix = ', blurry background, grainy'
-        #     content = content.replace('creative photo of ', 'raw photo of ')
+        content = prefix + content
+        # content = prefix + content + suffix
+        # # content = content.replace(prefix, '')
 
-        content = prefix + content + suffix
-        # content = content.replace(prefix, '')
-
-        # content = remove_non_ascii(content)
+        # # content = remove_non_ascii(content)
         with open(full_path, "w", encoding="utf-8") as out_f:
             out_f.write(content)

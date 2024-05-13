@@ -72,9 +72,10 @@ gen_kwargs = {
     "temperature": 0.6,
 } 
 # input_dir = "F:/ImageSet/openxl2_realism_test_output/image_cog"
-input_dir = "path/to/image/dir"
+# input_dir = "path/to/image/dir"
+input_dir = "F:/ImageSet/openxl2_creative2_fix_saturation/caption"
 # image_ext = '.jpg'
-image_ext = '.webp'
+image_ext = '.jpg'
 
 subsets = os.listdir(input_dir)
 total_subset = len(subsets)
