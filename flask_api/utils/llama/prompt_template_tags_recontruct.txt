@@ -1,0 +1,11 @@
+Use the tags to enhance the desciption, masterpiece anime artwork or similar words should always be the first word
+
+describe the sentence as detail as possible.
+avoid to describe atmosphere.
+
+with tags contains '(' and ')', the word before '(' is the name of the character. the word inside '()' is the name of the game or anime.
+
+all description is a single character.
+
+tags: 
+$tags$

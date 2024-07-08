@@ -119,7 +119,12 @@ def main(image_folder, model_repo_ids, tag_threshold, filter_tags, stack_models)
         with open(textfile, 'w', encoding='utf-8') as fw:
             for _, row in averaged_tags_scores.iterrows():
                 if TAG_ONLY:
-                    fw.write(f"{row['name']}, ")
+                    tag = row['name'].replace('_',' ')
+                    if tag == '1girl':
+                        tag = 'woman'
+                    if tag == '1boy':
+                        tag = 'man'
+                    fw.write(f"{tag}, ")
                 else:
                     if row['category'] == CHARACTER_CATEGORY:
                         fw.write(f"[characeter_{row['name']}: {row['Score']:.2f}], ")
@@ -147,7 +152,11 @@ if __name__ == '__main__':
     # input_directory = 'F:/ImageSet/Fasion_dataset/all'
     # input_directory = 'F:/ImageSet/openxl2_reg/1_fashion_photo'
     # input_directory = 'F:/ImageSet/openxl2_realism/centered'
-    input_directory =  'F:/ImageSet/hands_dataset_above_average/clean-hands'
-    args.filter = ['questionable','general','sensitive']
-    args.output_extension = '.txt'
-    main(input_directory, args.model_repo_id, args.threshold, args.filter, args.stack_models)
+    # input_directory =  'F:/ImageSet/hands_dataset_above_average/clean-hands'
+    # input_directory = 'F:/ImageSet/handpick_high_quality/cdrama scene'
+    input_directory = 'F:/ImageSet/handpick_high_quality_b2_cropped'
+    args.filter = ['solo','questionable','general','sensitive']
+    args.output_extension = '.wd14'
+    for subdir in os.listdir(input_directory):
+        subdir_path = os.path.join(input_directory, subdir)
+        main(subdir_path, args.model_repo_id, args.threshold, args.filter, args.stack_models)

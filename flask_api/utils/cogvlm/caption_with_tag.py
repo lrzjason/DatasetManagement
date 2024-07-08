@@ -274,7 +274,7 @@ for subset_dir in subsets:
     # Iterate directory
     for f in os.listdir(character_dir):
         # check only text files
-        if f.endswith('.jpg') or f.endswith('.webp'):
+        if f.endswith('.jpg') or f.endswith('.webp') or f.endswith('.jpeg') or f.endswith('.png'):
             images.append(f)
     total_image = len(images)
     count_image = 0

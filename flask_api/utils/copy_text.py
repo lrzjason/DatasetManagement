@@ -5,8 +5,8 @@ import os
 import json
 
 # Define the folder path and the output file name
-input_dir = 'F:/ImageSet/openxl2_worst'
-caption_dir = 'F:/ImageSet/pickscore_random_captions_pag_ays_parent/pickscore_random_captions_pag_ays'
+input_dir = 'F:/ImageSet/8k_images_captioned_cropped/'
+caption_dir = 'F:/ImageSet/8k_images_captioned/'
 
 file_ext = '.webp'
 
@@ -18,7 +18,7 @@ for subdir in os.listdir(input_dir):
         if file.endswith((file_ext)):
             # Join the folder path and the file name to get the full path
             txt_file = file.replace(file_ext, '.txt')
-            caption_path = os.path.join(caption_dir, txt_file)
+            caption_path = os.path.join(caption_dir, subdir, txt_file)
             full_path = os.path.join(folder_path, txt_file)
             
             if os.path.exists(full_path):

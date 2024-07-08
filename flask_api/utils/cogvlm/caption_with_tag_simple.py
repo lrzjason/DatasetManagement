@@ -73,9 +73,11 @@ gen_kwargs = {
 } 
 # input_dir = "F:/ImageSet/openxl2_realism_test_output/image_cog"
 # input_dir = "path/to/image/dir"
-input_dir = "F:/ImageSet/openxl2_creative2_fix_saturation/caption"
+# input_dir = "F:/ImageSet/openxl2_creative2_fix_saturation/caption"
+input_dir = "F:/ImageSet/handpick_high_quality_b2_cropped"
 # image_ext = '.jpg'
-image_ext = '.jpg'
+image_exts = ['.jpg','.jpeg','.png','.webp']
+
 
 subsets = os.listdir(input_dir)
 total_subset = len(subsets)
@@ -103,9 +105,10 @@ for subset_dir in subsets:
     images = []
     # Iterate directory
     for f in os.listdir(subset_dir_path):
-        # check only text files
-        if f.endswith(image_ext):
-            images.append(f)
+        for ext in image_exts:
+            # check only text files
+            if f.endswith(ext):
+                images.append(f)
     total_image = len(images)
     count_image = 0
     # loop all image in clear dir
@@ -118,15 +121,15 @@ for subset_dir in subsets:
         filename = os.path.splitext(os.path.basename(image_path))[0]
         filename, ext = os.path.splitext(image_name)
 
-        file_name = image_name.split('.')[0]
-        old_txt_file_path = os.path.join(subset_dir_path, file_name+'.txt')
+        # file_name = image_name.split('.')[0]
+        # old_txt_file_path = os.path.join(subset_dir_path, file_name+'.txt')
         txt_file_path = os.path.join(subset_dir_path, filename+'.txt')
-        print(txt_file_path)
+        # print(txt_file_path)
 
-        if os.path.exists(old_txt_file_path):
-            print(f'{old_txt_file_path} already exists, skip')
+        if os.path.exists(txt_file_path):
+            print(f'{txt_file_path} already exists, skip')
             # rename the wrongly named file
-            os.rename(old_txt_file_path, txt_file_path)
+            # os.rename(old_txt_file_path, txt_file_path)
             continue
 
         image = Image.open(image_path).convert('RGB')
@@ -204,7 +207,8 @@ for subset_dir in subsets:
             with open(txt_file_path, 'w', encoding="utf-8") as f:
                 f.write(response)
                 f.close()
-                print(f'write {file_name}.txt')
+                print(f'write {filename}.txt')
+                # print(f'write {file_name}.txt')
         # break
     # run one subset for test
     # break
