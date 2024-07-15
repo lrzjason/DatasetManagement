@@ -15,9 +15,14 @@ import json
 
 # dora_path = "F:/models/hy/hy_dora-500/pytorch_lora_weights.safetensors"
 # model_path = "F:/models/Stable-diffusion/sdxl/o2/openxl2_030.safetensors"
-model_path = "F:/models/unet/new_kolors/diffusion_pytorch_model.fp16.safetensors"
+model_path = "F:/models/Lora/kolors/kolors_test-100.safetensors"
+# model_path = "F:/models/kolors/kolors-lora-4200/kolors-lora-4200.safetensors"
+# model_path = "F:/models/Lora/sdxl/openxl_lora_14.safetensors"
+
+# model_path = "F:/models/unet/realisticKolors/realisticKolor-docci-120258.safetensors"
+# model_path = "F:/models/unet/new_kolors/diffusion_pytorch_model.fp16.safetensors"
 t_model = safetensors.torch.load_file(model_path)
-json_file = "print_new_kolors_converted_state_dict.json"
+json_file = "print_test_kolors_state_dict.json"
 with open(json_file, 'w', encoding='utf-8') as f:
     json.dump(list(t_model.keys()), f, indent=4)
 # transformer_state_dict = pipe.transformer.state_dict()

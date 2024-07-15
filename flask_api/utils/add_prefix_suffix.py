@@ -7,9 +7,9 @@ import re
 
 # Define the folder path and the output file name
 # input_dir = "F:/ImageSet/vit_train/hand-classifier/1_good_hand"
-input_dir = "F:/ImageSet/openxl2_worst_23/10_worst_image_23"
+input_dir = "F:/ImageSet/3dkitten"
 
-prefix = 'worst quality, worst anatomy, distortion, '
+prefix = '3dkitten, '
 # suffix = ', 8k photo, high quality'
 suffix = ''
 
@@ -38,8 +38,8 @@ suffix = ''
 #                 out_f.write(content)
 
 
-# def remove_non_ascii(text):
-#     return re.sub(r'[^/x00-/x7F]*[/ ]', '_', text)
+def remove_non_ascii(text):
+    return re.sub(r'[^/x00-/x7F]*[/ ]', '', text)
 
 for file in os.listdir(input_dir):
     # Check if the file is an image by its extension
